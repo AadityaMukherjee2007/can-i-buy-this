@@ -10,6 +10,7 @@ import CashFlowChart from "@/components/CashFlowChart";
 import CashGauge from "@/components/CashGauge";
 import { useAuth } from "@/lib/auth";
 import { API, fmt } from "@/lib/format";
+import { useBusiness } from "@/hooks/useBusiness";
 
 interface Result {
   decision: string;
@@ -20,32 +21,19 @@ interface Result {
   without_purchase_trajectory: number[];
   data_source: string;
   scenario_id: string;
-}
-
-interface BusinessData {
-  company_name: string;
-  min_safe_reserve: number;
+  purchase_cost: number;
 }
 
 export default function Dashboard() {
   const router = useRouter();
   const { token, user, loading: authLoading } = useAuth();
+  const { business, loading: bizLoading } = useBusiness();
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [business, setBusiness] = useState<BusinessData | null>(null);
-  const [bizLoading, setBizLoading] = useState(true);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!token) { router.push("/auth/login"); return; }
-    fetch(`${API}/api/business/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data: BusinessData | null) => setBusiness(data))
-      .catch(() => setBizLoading(false))
-      .finally(() => setBizLoading(false));
+    if (!authLoading && !token) router.push("/auth/login");
   }, [token, authLoading, router]);
 
   const handleSubmit = async (data: {
@@ -81,7 +69,7 @@ export default function Dashboard() {
   if (authLoading || bizLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" role="status" aria-label="Loading" />
       </div>
     );
   }
@@ -122,8 +110,8 @@ export default function Dashboard() {
               <DecisionBadge
                 decision={result.decision}
                 reason={result.reason}
-                currentCash={result.current_cash}
                 minReserve={minReserve}
+                purchaseCost={result.purchase_cost}
                 chartData={result.chart_data}
                 withoutPurchaseData={result.without_purchase_trajectory}
                 onReset={handleReset}

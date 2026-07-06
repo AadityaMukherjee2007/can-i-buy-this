@@ -66,6 +66,9 @@ async def evaluate(
         purchase_name=payload.purchase_name,
         purchase_cost=payload.purchase_cost,
         recurring_cost=payload.recurring_cost,
+        expected_revenue=payload.expected_revenue,
+        payment_delay_days=payload.payment_delay_days,
+        data_source=data_source,
         decision=decision["decision"],
         wait_days=decision.get("wait_days"),
         reason=decision.get("reason"),
@@ -84,6 +87,7 @@ async def evaluate(
         without_purchase_trajectory=decision["without_purchase_trajectory"],
         scenario_id=scenario.id,
         data_source=data_source,
+        purchase_cost=payload.purchase_cost,
         expected_revenue=payload.expected_revenue,
         payment_delay_days=payload.payment_delay_days,
     )

@@ -1,29 +1,54 @@
 # Environment
 .env
-.env.local
+.env.*.local
+.env.production
+.env.development
 
 # Python
 __pycache__/
 *.py[cod]
+*.egg
 *.egg-info/
 .venv/
 venv/
+dist/
+build/
+*.so
+*.log
+.pytest_cache/
+htmlcov/
+.coverage
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+instance/
 
 # Node
 node_modules/
 .next/
 out/
+*.tsbuildinfo
+next-env.d.ts
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.swn
+*.bak
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Docker
-.pytest_cache/
-*.pyc
+.dockerignore
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+tmp/

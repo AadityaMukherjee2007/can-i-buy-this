@@ -27,12 +27,46 @@ const decisionIcon: Record<string, typeof CheckCircle2> = {
   WAIT: AlertTriangle,
 };
 
+const decisionColors = {
+  YES: { bg: "bg-emerald-50", text: "text-emerald-600" },
+  NO: { bg: "bg-red-50", text: "text-red-600" },
+  WAIT: { bg: "bg-amber-50", text: "text-amber-600" },
+};
+
+const steps = [
+  { number: "01", title: "Enter your purchase", desc: "Tell us what you want to buy and how much it costs." },
+  { number: "02", title: "We analyze your cash flow", desc: "We project 90 days of income and expenses." },
+  { number: "03", title: "Get your decision", desc: "Yes, no, or wait — each with a clear financial reason." },
+];
+
+const heroVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+};
+
+const easeOut = [0.25, 0.1, 0.25, 1] as const;
+
+const childVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
+};
+
+const stepVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.95 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0, scale: 1,
+    transition: { duration: 0.5, delay: i * 0.15, ease: easeOut },
+  }),
+};
+
 export default function LandingPage() {
   const { user } = useAuth();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const current = examples[index];
+  const dc = decisionColors[current.decision];
+  const Icon = decisionIcon[current.decision];
 
   useEffect(() => {
     if (!paused) {
@@ -43,36 +77,28 @@ export default function LandingPage() {
     };
   }, [paused]);
 
-  const decisionColors = {
-    YES: { bg: "bg-emerald-50", text: "text-emerald-600" },
-    NO: { bg: "bg-red-50", text: "text-red-600" },
-    WAIT: { bg: "bg-amber-50", text: "text-amber-600" },
-  };
-  const dc = decisionColors[current.decision];
-  const Icon = decisionIcon[current.decision];
-
   return (
     <div>
       <section className="min-h-[calc(100vh-57px)] flex items-center bg-white">
         <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-16 sm:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+              variants={heroVariants}
+              initial="hidden"
+              animate="visible"
             >
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-[0.15em] mb-4">
+              <motion.p variants={childVariants} className="text-xs font-medium text-slate-400 uppercase tracking-[0.15em] mb-4">
                 Cash flow decision engine
-              </p>
-              <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 leading-[1.1] tracking-tight mb-5">
+              </motion.p>
+              <motion.h1 variants={childVariants} className="text-4xl sm:text-5xl font-bold text-slate-900 leading-[1.1] tracking-tight mb-5">
                 One purchase.<br/>One clear decision.
-              </h1>
-              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-md mb-8">
+              </motion.h1>
+              <motion.p variants={childVariants} className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-md mb-8">
                 Enter what you want to buy and its cost. We project 90 days of
                 cash flow from your financial data and give you a yes, no, or
                 wait — with the numbers to back it up.
-              </p>
-              <div className="flex items-center gap-4">
+              </motion.p>
+              <motion.div variants={childVariants} className="flex items-center gap-4">
                 {user ? (
                   <Link href="/app" className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 transition-colors">
                     Go to dashboard
@@ -89,18 +115,25 @@ export default function LandingPage() {
                     </Link>
                   </>
                 )}
-              </div>
+              </motion.div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
               className="relative"
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
+              onFocus={() => setPaused(true)}
+              onBlur={() => setPaused(false)}
+              tabIndex={0}
             >
-              <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <motion.div
+                whileHover={{ y: -3, boxShadow: "0 8px 30px rgba(0,0,0,0.06)" }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+              >
                 <div className="flex items-center justify-between bg-slate-50 border-b border-slate-100 px-5 py-3">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-slate-400" />
@@ -111,26 +144,38 @@ export default function LandingPage() {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.3 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ type: "spring", stiffness: 200, damping: 22, mass: 0.8 }}
                     >
                       <div className="flex items-baseline justify-between mb-4">
                         <p className="text-sm font-medium text-slate-900">{current.purchase}</p>
                         <p className="text-sm font-semibold text-slate-900">{fmt(current.cost)}</p>
                       </div>
 
-                      <div className={`flex items-center gap-2 rounded-lg ${dc.bg} px-3.5 py-2.5 mb-3`}>
+                      <motion.div
+                        initial={{ scaleX: 0.95, opacity: 0 }}
+                        animate={{ scaleX: 1, opacity: 1 }}
+                        transition={{ delay: 0.1, duration: 0.3 }}
+                        className={`flex items-center gap-2 rounded-lg ${dc.bg} px-3.5 py-2.5 mb-3`}
+                      >
                         <Icon className={`h-5 w-5 ${dc.text}`} />
                         <span className={`text-base font-bold ${dc.text}`}>{current.decision}</span>
-                      </div>
+                      </motion.div>
 
                       <p className="text-sm text-slate-600 mb-4">{current.reason}</p>
 
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="font-medium">{current.impact.label}:</span>
-                        <span className="font-semibold text-slate-700">{current.impact.value}</span>
+                        <motion.span
+                          key={`${index}-${current.impact.value}`}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="font-semibold text-slate-700"
+                        >
+                          {current.impact.value}
+                        </motion.span>
                       </div>
                     </motion.div>
                   </AnimatePresence>
@@ -140,15 +185,25 @@ export default function LandingPage() {
                       <button
                         key={i}
                         onClick={() => setIndex(i)}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${i === index ? "w-6 bg-slate-900" : "w-1.5 bg-slate-300 hover:bg-slate-400"}`}
+                        className="relative h-1.5"
                         role="tab"
                         aria-selected={i === index}
                         aria-label={`Example ${i + 1}: ${examples[i].decision}`}
-                      />
+                      >
+                        {i === index ? (
+                          <motion.div
+                            layoutId="activeDot"
+                            className="h-1.5 w-6 rounded-full bg-slate-900"
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                          />
+                        ) : (
+                          <div className="h-1.5 w-1.5 rounded-full bg-slate-300 hover:bg-slate-400 transition-colors" />
+                        )}
+                      </button>
                     ))}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -165,20 +220,23 @@ export default function LandingPage() {
             How it works
           </motion.p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            {[
-              { number: "01", title: "Enter your purchase", desc: "Tell us what you want to buy and how much it costs." },
-              { number: "02", title: "We analyze your cash flow", desc: "We project 90 days of income and expenses." },
-              { number: "03", title: "Get your decision", desc: "Yes, no, or wait — each with a clear financial reason." },
-            ].map((step, i) => (
+            {steps.map((step, i) => (
               <motion.div
                 key={step.number}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                custom={i}
+                variants={stepVariants}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="text-center"
+                className="text-center group"
               >
-                <p className="text-2xl font-bold text-slate-200 mb-3">{step.number}</p>
+                <motion.p
+                  whileHover={{ scale: 1.15 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  className="text-2xl font-bold text-slate-200 mb-3 group-hover:text-slate-300 transition-colors"
+                >
+                  {step.number}
+                </motion.p>
                 <h3 className="text-sm font-semibold text-slate-900 mb-2">{step.title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">{step.desc}</p>
               </motion.div>
@@ -201,13 +259,20 @@ export default function LandingPage() {
             <p className="text-sm text-slate-500 mb-8 max-w-sm mx-auto">
               No credit card. No bank connection required to try it out.
             </p>
-            <Link
-              href={user ? "/app" : "/auth/register"}
-              className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-            >
-              {user ? "Go to dashboard" : "Start evaluating"}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 300, damping: 15 }}>
+              <Link
+                href={user ? "/app" : "/auth/register"}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+              >
+                {user ? "Go to dashboard" : "Start evaluating"}
+                <motion.span
+                  animate={{ x: [0, 3, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </motion.span>
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       </section>

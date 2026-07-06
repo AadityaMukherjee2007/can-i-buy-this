@@ -20,5 +20,6 @@ class EvaluateResponse(BaseModel):
     without_purchase_trajectory: list[float]
     scenario_id: Optional[UUID] = None
     data_source: str = "real"
+    purchase_cost: float = 0
     expected_revenue: float = 0
     payment_delay_days: int = 0

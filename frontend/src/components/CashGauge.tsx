@@ -15,8 +15,8 @@ export default function CashGauge({ currentCash, minReserve, chartData }: Props)
   const ratio = minReserve > 0 ? Math.min(currentCash / minReserve, 2) : (currentCash > 0 ? 1 : 0);
   const fillPct = Math.max(0, Math.round((ratio / 2) * 100));
 
-  const runwayDays = chartData ? chartData.findIndex((v) => v < minReserve) : -1;
-  const runway = runwayDays >= 0 ? runwayDays : (chartData ? 90 : null);
+  const runwayDays = chartData?.length ? chartData.findIndex((v) => v < minReserve) : -1;
+  const runway = runwayDays >= 0 ? runwayDays : (chartData?.length ? 90 : null);
 
   let color: string;
   let label: string;

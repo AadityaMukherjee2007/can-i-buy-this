@@ -47,6 +47,7 @@ export default function RegisterPage() {
               <input
                 id="full_name"
                 type="text"
+                autoComplete="name"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -59,6 +60,7 @@ export default function RegisterPage() {
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -71,6 +73,7 @@ export default function RegisterPage() {
               <input
                 id="password"
                 type="password"
+                autoComplete="new-password"
                 required
                 minLength={8}
                 value={password}
@@ -84,6 +87,7 @@ export default function RegisterPage() {
               <input
                 id="confirm_password"
                 type="password"
+                autoComplete="new-password"
                 required
                 minLength={8}
                 value={confirmPassword}

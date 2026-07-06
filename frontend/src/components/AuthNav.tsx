@@ -9,15 +9,15 @@ export default function AuthNav() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
 
-  if (loading) return null;
-
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 py-3">
         <Link href={user ? "/app" : "/"} className="text-base font-semibold text-slate-900 tracking-tight">
           canibuythis
         </Link>
-        {user ? (
+        {loading ? (
+          <div className="h-8 w-20" />
+        ) : user ? (
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500 hidden sm:inline">{user.full_name}</span>
             <Link

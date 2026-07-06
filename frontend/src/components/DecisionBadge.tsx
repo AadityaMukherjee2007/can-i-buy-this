@@ -7,8 +7,8 @@ import { fmt } from "@/lib/format";
 interface Props {
   decision: string;
   reason: string;
-  currentCash: number;
   minReserve: number;
+  purchaseCost: number;
   chartData: number[];
   withoutPurchaseData: number[];
   onReset?: () => void;
@@ -21,7 +21,7 @@ const DECISIONS: Record<string, { label: string; border: string; bg: string; tex
 };
 
 export default function DecisionBadge({
-  decision, reason, currentCash, minReserve, chartData, withoutPurchaseData, onReset,
+  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset,
 }: Props) {
   const c = DECISIONS[decision as keyof typeof DECISIONS] ?? DECISIONS.NO;
 
@@ -60,14 +60,14 @@ export default function DecisionBadge({
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-md bg-white/80 px-3 py-2">
           <p className="text-xs text-slate-400">Purchase cost</p>
-          <p className="text-sm font-semibold text-slate-900">{fmt(currentCash < 0 ? 0 : Math.min(currentCash, costImpact))}</p>
+          <p className="text-sm font-semibold text-slate-900">{fmt(purchaseCost)}</p>
         </div>
         <div className="rounded-md bg-white/80 px-3 py-2">
           <p className="text-xs text-slate-400">Day 90 balance</p>
           <p className="text-sm font-semibold text-slate-900">{fmt(endBalance)}</p>
         </div>
         <div className="rounded-md bg-white/80 px-3 py-2">
-          <p className="text-xs text-slate-400">vs. without purchase</p>
+          <p className="text-xs text-slate-400">Cash impact</p>
           <p className="text-sm font-semibold text-slate-900">{fmt(costImpact)}</p>
         </div>
         <div className="rounded-md bg-white/80 px-3 py-2">
