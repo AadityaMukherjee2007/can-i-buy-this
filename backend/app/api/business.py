@@ -1,0 +1,30 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_session
+from app.models.user import User
+from app.schemas.business import BusinessResponse, BusinessUpdate
+from app.api.deps import get_current_user
+
+router = APIRouter(prefix="/api/business", tags=["business"])
+
+
+@router.get("/me", response_model=BusinessResponse)
+async def get_my_business(user: User = Depends(get_current_user)):
+    return BusinessResponse.model_validate(user.business)
+
+
+@router.put("/me", response_model=BusinessResponse)
+async def update_my_business(
+    payload: BusinessUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+):
+    biz = user.business
+    if payload.company_name is not None:
+        biz.company_name = payload.company_name
+    if payload.min_safe_reserve is not None:
+        biz.min_safe_reserve = payload.min_safe_reserve
+    await db.commit()
+    await db.refresh(biz)
+    return BusinessResponse.model_validate(biz)
