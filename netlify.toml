@@ -3,6 +3,7 @@
   command = "npm run build"
   publish = "out/"
   environment = { NEXT_PUBLIC_API_URL = "" }
+# PLAID_CLIENT_ID, PLAID_SECRET, PLAID_ENV set in Netlify Dashboard env vars
 
 # API routes — handled by the Python serverless function (must be first)
 [[redirects]]

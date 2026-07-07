@@ -6,10 +6,12 @@ import { motion } from "framer-motion";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API } from "@/lib/format";
+import PlaidLinkButton from "@/components/PlaidLinkButton";
 
 interface BusinessData {
   company_name: string;
   min_safe_reserve: number;
+  plaid_item_id?: string | null;
 }
 
 export default function SettingsPage() {
@@ -21,6 +23,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [plaidItemId, setPlaidItemId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -36,6 +39,7 @@ export default function SettingsPage() {
       .then((data: BusinessData) => {
         setCompanyName(data.company_name || "");
         setSafeReserve(data.min_safe_reserve?.toString() || "");
+        setPlaidItemId(data.plaid_item_id ?? null);
       })
       .catch((err) => setError(err.message))
       .finally(() => setFetching(false));
@@ -166,6 +170,29 @@ export default function SettingsPage() {
               )}
             </button>
           </form>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="mt-6 rounded-lg border border-slate-200 bg-white p-5"
+        >
+          <h2 className="text-sm font-semibold text-slate-900 mb-1">Bank connection</h2>
+          <p className="text-xs text-slate-500 mb-4">
+            {plaidItemId
+              ? "Your bank account is linked. Transactions will sync automatically."
+              : "Link a bank account to use real transaction data instead of demo data."}
+          </p>
+
+          {plaidItemId && (
+            <div className="flex items-center gap-2 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              Linked
+            </div>
+          )}
+
+          <PlaidLinkButton onSuccess={() => setPlaidItemId("linked")} />
         </motion.div>
       </main>
     </div>
