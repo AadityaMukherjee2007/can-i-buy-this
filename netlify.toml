@@ -1,7 +1,13 @@
 [build]
   base = "frontend/"
   command = "npm run build"
-  publish = ".next"
+  publish = "out/"
+
+# SPA fallback — serve index.html for all routes (Next.js static export)
+[[redirects]]
+  from = "/**"
+  to = "/index.html"
+  status = 200
 
 [[headers]]
   for = "/*"
