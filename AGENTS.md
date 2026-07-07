@@ -4,7 +4,7 @@
 
 - **Frontend**: Next.js 16.2.10 (Turbopack), React 19, Tailwind CSS v4, Recharts, framer-motion
 - **Backend**: Python 3.12, FastAPI 0.111, SQLAlchemy 2.0 async, asyncpg
-- **Infra**: Docker Compose (Postgres 16, Redis 7, Celery 5), no CI/CD
+- **Infra**: Docker Compose (backend, frontend), no CI/CD
 
 ## Commands
 
@@ -18,12 +18,12 @@ uvicorn app.main:app --reload --port 8000
 python -m pytest tests/ -v    # 12 decision engine tests, no fixtures needed
 
 # Docker (from repo root)
-docker compose up --build      # 5 services: db(:5433), redis, backend, celery_worker, frontend(:3000)
+docker compose up --build      # 2 services: backend, frontend(:3000)
 ```
 
 ## Architecture
 
-Backend layers: `app/models/` (SQLAlchemy `Mapped`/`mapped_column`) → `app/schemas/` (Pydantic) → `app/api/` (FastAPI routes) → `app/services/` (business logic) → `app/workers/` (Celery tasks).
+Backend layers: `app/models/` (SQLAlchemy `Mapped`/`mapped_column`) → `app/schemas/` (Pydantic) → `app/api/` (FastAPI routes) → `app/services/` (business logic) → `app/workers/` (Celery tasks, removed — dead code).
 
 Frontend: `src/app/` (App Router pages), `src/components/` (client components), `src/lib/` (auth + utilities). `@/` maps to `./src/`.
 
@@ -33,9 +33,9 @@ No Alembic migrations — `Base.metadata.create_all` runs on startup via FastAPI
 
 - **Tailwind CSS v4**: uses `@import "tailwindcss"` + `@theme inline {}` directive, NOT v3 `@tailwind`. Configure via CSS, not `tailwind.config`.
 - **Plaid SDK v27**: `Environment.Development` removed. Only `Sandbox` and `Production`.
-- **Celery**: needs `broker_connection_retry_on_startup=True` in config (suppresses deprecation warning).
+- **Celery**: removed (dead code — was only for Plaid sync which had no trigger endpoint).
 - **No `.env` committed**: copy `.env.example`. Config reads via pydantic-settings.
-- **Auth is localStorage-based** (`token`/`user` keys in `src/lib/auth.tsx`). API URL hardcoded to `http://localhost:8000`.
+- **Auth is localStorage-based** (`token`/`user` keys in `src/lib/auth.tsx`). API URL hardcoded to `http://localhost:8000`; override via `NEXT_PUBLIC_API_URL`.
 - **Lint override**: `react-hooks/set-state-in-effect` is disabled for `src/lib/auth.tsx` and `src/hooks/useBusiness.ts` (necessary pattern for localStorage sync).
 - **Backend uses dummy data** ($10k cash, synthetic inflows) when no transactions exist — only activates when `transactions` table is empty.
 - **Plaid sync** (Celery task) exists but has no trigger endpoint – dead code unless invoked manually.

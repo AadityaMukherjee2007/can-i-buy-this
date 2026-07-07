@@ -1,9 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
   backend:
     build: ./backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -12,20 +7,6 @@ services:
       - ./backend:/app
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: redis://127.0.0.1:6379/0
-      PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
-      PLAID_SECRET: ${PLAID_SECRET}
-      PLAID_ENV: sandbox
-
-  celery_worker:
-    build: ./backend
-    command: celery -A app.workers.celery_app worker --loglevel=info
-    network_mode: host
-    volumes:
-      - ./backend:/app
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: redis://127.0.0.1:6379/0
       PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
       PLAID_SECRET: ${PLAID_SECRET}
       PLAID_ENV: sandbox

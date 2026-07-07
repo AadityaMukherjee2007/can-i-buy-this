@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://cibt_user:cibt_pass@localhost:5432/canibuythis"
-    redis_url: str = "redis://localhost:6379/0"
     plaid_client_id: str = ""
     plaid_secret: str = ""
     plaid_env: str = "sandbox"
