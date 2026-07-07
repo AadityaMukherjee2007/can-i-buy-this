@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { API } from "@/lib/format";
 
 interface User {
   email: string;
@@ -16,8 +17,6 @@ interface AuthContext {
   logout: () => void;
   loading: boolean;
 }
-
-const API = "http://localhost:8000";
 
 const AuthCtx = createContext<AuthContext | null>(null);
 
