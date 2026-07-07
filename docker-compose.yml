@@ -1,15 +1,4 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: cibt_user
-      POSTGRES_PASSWORD: cibt_pass
-      POSTGRES_DB: canibuythis
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
   redis:
     image: redis:7-alpine
     ports:
@@ -18,34 +7,28 @@ services:
   backend:
     build: ./backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8000:8000"
+    network_mode: host
     volumes:
       - ./backend:/app
     environment:
-      DATABASE_URL: postgresql+asyncpg://cibt_user:cibt_pass@db:5432/canibuythis
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://127.0.0.1:6379/0
       PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
       PLAID_SECRET: ${PLAID_SECRET}
       PLAID_ENV: sandbox
-    depends_on:
-      - db
-      - redis
 
   celery_worker:
     build: ./backend
     command: celery -A app.workers.celery_app worker --loglevel=info
+    network_mode: host
     volumes:
       - ./backend:/app
     environment:
-      DATABASE_URL: postgresql+asyncpg://cibt_user:cibt_pass@db:5432/canibuythis
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://127.0.0.1:6379/0
       PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
       PLAID_SECRET: ${PLAID_SECRET}
       PLAID_ENV: sandbox
-    depends_on:
-      - db
-      - redis
 
   frontend:
     build: ./frontend
@@ -59,5 +42,4 @@ services:
     depends_on:
       - backend
 
-volumes:
-  pgdata:
+
