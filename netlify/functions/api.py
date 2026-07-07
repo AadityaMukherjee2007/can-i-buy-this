@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api")
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "backend"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 
 os.environ["NETLIFY"] = "true"
 

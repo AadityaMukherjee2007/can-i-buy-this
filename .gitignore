@@ -56,3 +56,4 @@ tmp/
 # Playwright
 test-results/
 playwright-report/
+netlify/functions/backend/
