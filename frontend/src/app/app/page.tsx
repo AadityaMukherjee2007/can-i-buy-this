@@ -77,7 +77,7 @@ export default function Dashboard() {
   const minReserve = business?.min_safe_reserve ?? 5000;
   const companyName = business?.company_name || user?.full_name || "there";
   const currentCash = result?.current_cash ?? 10000;
-  const isDummy = !result || result.data_source === "dummy";
+  const isDummy = result?.data_source === "dummy";
 
   return (
     <div className="min-h-screen bg-slate-50">
