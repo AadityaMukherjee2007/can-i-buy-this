@@ -1,6 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 
+import sqlalchemy as sa
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,6 +16,24 @@ async def lifespan(app: FastAPI):
     if not _is_serverless and engine is not None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            try:
+                await conn.execute(
+                    sa.text("ALTER TABLE businesses RENAME COLUMN plaid_access_token TO saltedge_customer_id")
+                )
+            except Exception:
+                pass
+            try:
+                await conn.execute(
+                    sa.text("ALTER TABLE businesses RENAME COLUMN plaid_item_id TO saltedge_connection_id")
+                )
+            except Exception:
+                pass
+            try:
+                await conn.execute(
+                    sa.text("ALTER TABLE transactions RENAME COLUMN plaid_transaction_id TO saltedge_transaction_id")
+                )
+            except Exception:
+                pass
     yield
 
 
