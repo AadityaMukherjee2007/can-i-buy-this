@@ -1,8 +1,0 @@
-{
-  "functions": {
-    "app/main.py": {
-      "maxDuration": 30,
-      "memory": 512
-    }
-  }
-}
