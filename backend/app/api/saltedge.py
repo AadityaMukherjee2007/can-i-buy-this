@@ -32,7 +32,7 @@ async def get_connect_session(
     try:
         if not biz.saltedge_customer_id:
             customer = await create_customer(str(user.id))
-            biz.saltedge_customer_id = customer["id"]
+            biz.saltedge_customer_id = customer["customer_id"]
             await db.commit()
 
         return_to = "http://localhost:3000/settings?connection_completed=1"

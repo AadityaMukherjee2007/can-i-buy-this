@@ -6,7 +6,7 @@ import httpx
 
 from app.config import settings
 
-BASE_URL = "https://www.saltedge.com/api/v5"
+BASE_URL = "https://www.saltedge.com/api/v6"
 
 
 def _headers() -> dict[str, str]:
@@ -32,17 +32,17 @@ async def create_customer(identifier: str) -> dict[str, Any]:
 async def create_connect_session(
     customer_id: str,
     return_to_url: str,
-    from_date: str = "2024-01-01",
+    from_date: str = "2024-06-18",
 ) -> dict[str, Any]:
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            f"{BASE_URL}/connect_sessions/create",
+            f"{BASE_URL}/connections/connect",
             headers=_headers(),
             json={
                 "data": {
                     "customer_id": customer_id,
                     "consent": {
-                        "scopes": ["account_details", "transactions_details"],
+                        "scopes": ["accounts", "transactions"],
                         "from_date": from_date,
                     },
                     "attempt": {
@@ -104,7 +104,7 @@ async def get_transactions(
 
 async def fetch_all_transactions(
     customer_id: str,
-    from_date: str = "2024-01-01",
+    from_date: str = "2024-06-18",
 ) -> list[dict[str, Any]]:
     connections = await get_connections(customer_id)
     all_transactions: list[dict[str, Any]] = []
