@@ -4,11 +4,12 @@ from contextlib import asynccontextmanager
 import sqlalchemy as sa
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
 
 from app.database import engine, Base
 from app.api import auth, evaluate, business, transactions, saltedge
 
-_is_serverless = os.environ.get("NETLIFY") == "true"
+_is_serverless = os.environ.get("NETLIFY") == "true" or os.environ.get("VERCEL") == "1"
 
 
 @asynccontextmanager
@@ -72,3 +73,6 @@ app.include_router(saltedge.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+handler = Mangum(app)
