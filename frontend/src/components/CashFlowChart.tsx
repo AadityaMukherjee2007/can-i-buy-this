@@ -18,9 +18,10 @@ interface Props {
   withPurchase: number[];
   withoutPurchase: number[];
   minReserve: number;
+  waitDays?: number | null;
 }
 
-export default function CashFlowChart({ withPurchase, withoutPurchase, minReserve }: Props) {
+export default function CashFlowChart({ withPurchase, withoutPurchase, minReserve, waitDays }: Props) {
   const chartData = withPurchase.map((value, i) => ({
     day: i + 1,
     withPurchase: Math.round(value * 100) / 100,
@@ -34,7 +35,7 @@ export default function CashFlowChart({ withPurchase, withoutPurchase, minReserv
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">90-Day Cash Flow</h3>
-      <div className="h-64">
+      <div className="h-48 sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -84,6 +85,20 @@ export default function CashFlowChart({ withPurchase, withoutPurchase, minReserv
                 fontSize: 10,
               }}
             />
+            {waitDays != null && (
+              <ReferenceLine
+                x={waitDays}
+                stroke="#f59e0b"
+                strokeWidth={1.5}
+                strokeDasharray="3 3"
+                label={{
+                  value: "Buy on day " + waitDays,
+                  position: "top",
+                  fill: "#f59e0b",
+                  fontSize: 10,
+                }}
+              />
+            )}
             <Line
               type="monotone"
               dataKey="withoutPurchase"

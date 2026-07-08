@@ -76,7 +76,7 @@ export default function Dashboard() {
 
   const minReserve = business?.min_safe_reserve ?? 5000;
   const companyName = business?.company_name || user?.full_name || "there";
-  const currentCash = result?.current_cash ?? 10000;
+  const currentCash = result?.current_cash ?? business?.current_cash ?? 0;
   const isDummy = result?.data_source === "dummy";
 
   return (
@@ -95,8 +95,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
-          <div className="lg:col-span-2 space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-5">
             {!result ? (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -115,6 +115,7 @@ export default function Dashboard() {
                 chartData={result.chart_data}
                 withoutPurchaseData={result.without_purchase_trajectory}
                 onReset={handleReset}
+                waitDays={result.wait_days}
               />
             )}
 
@@ -145,19 +146,19 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="lg:col-span-3 space-y-5">
+          <div className="lg:col-span-3 space-y-4 sm:space-y-5">
             {result ? (
               <>
                 <CashFlowChart
                   withPurchase={result.chart_data}
                   withoutPurchase={result.without_purchase_trajectory}
                   minReserve={minReserve}
+                  waitDays={result.wait_days}
                 />
                 <div className="rounded-lg border border-slate-200 bg-white p-5">
                   <CashGauge
                     currentCash={result.current_cash}
                     minReserve={minReserve}
-                    chartData={result.chart_data}
                   />
                 </div>
               </>

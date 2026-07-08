@@ -7,6 +7,7 @@ import { API } from "@/lib/format";
 interface BusinessData {
   company_name: string;
   min_safe_reserve: number;
+  current_cash: number;
 }
 
 export function useBusiness() {

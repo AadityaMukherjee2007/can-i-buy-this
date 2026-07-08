@@ -12,6 +12,7 @@ interface Props {
   chartData: number[];
   withoutPurchaseData: number[];
   onReset?: () => void;
+  waitDays?: number | null;
 }
 
 const DECISIONS: Record<string, { label: string; border: string; bg: string; text: string; sub: string }> = {
@@ -21,7 +22,7 @@ const DECISIONS: Record<string, { label: string; border: string; bg: string; tex
 };
 
 export default function DecisionBadge({
-  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset,
+  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset, waitDays,
 }: Props) {
   const c = DECISIONS[decision as keyof typeof DECISIONS] ?? DECISIONS.NO;
 
@@ -45,6 +46,28 @@ export default function DecisionBadge({
         <div>
           <p className={`text-3xl font-bold tracking-tight ${c.text}`}>{c.label}</p>
           <p className={`mt-1 text-sm ${c.sub}`}>{reason}</p>
+          {decision === "WAIT" && waitDays != null && (
+            <div className="mt-3 flex items-center gap-3">
+              <div className="relative h-8 w-8 shrink-0">
+                <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="13" fill="none" stroke="#fde68a" strokeWidth="3" />
+                  <circle
+                    cx="16" cy="16" r="13"
+                    fill="none" stroke="#f59e0b" strokeWidth="3"
+                    strokeDasharray={`${(waitDays / 90) * 81.68} 81.68`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-amber-700">
+                  {waitDays}d
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-amber-700">Buy on day {waitDays}</p>
+                <p className="text-[11px] text-amber-500">{90 - waitDays} days of runway remaining</p>
+              </div>
+            </div>
+          )}
         </div>
         {onReset && (
           <button
@@ -57,22 +80,22 @@ export default function DecisionBadge({
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-md bg-white/80 px-3 py-2">
-          <p className="text-xs text-slate-400">Purchase cost</p>
-          <p className="text-sm font-semibold text-slate-900">{fmt(purchaseCost)}</p>
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
+        <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
+          <p className="text-[11px] sm:text-xs text-slate-400 truncate">Purchase cost</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(purchaseCost)}</p>
         </div>
-        <div className="rounded-md bg-white/80 px-3 py-2">
-          <p className="text-xs text-slate-400">Day 90 balance</p>
-          <p className="text-sm font-semibold text-slate-900">{fmt(endBalance)}</p>
+        <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
+          <p className="text-[11px] sm:text-xs text-slate-400 truncate">Day 90 balance</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(endBalance)}</p>
         </div>
-        <div className="rounded-md bg-white/80 px-3 py-2">
-          <p className="text-xs text-slate-400">Cash impact</p>
-          <p className="text-sm font-semibold text-slate-900">{fmt(costImpact)}</p>
+        <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
+          <p className="text-[11px] sm:text-xs text-slate-400 truncate">Cash impact</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(costImpact)}</p>
         </div>
-        <div className="rounded-md bg-white/80 px-3 py-2">
-          <p className="text-xs text-slate-400">Runway</p>
-          <p className="text-sm font-semibold text-slate-900">{runway >= 90 ? "90+ days" : `${runway} days`}</p>
+        <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
+          <p className="text-[11px] sm:text-xs text-slate-400 truncate">Runway</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{runway >= 90 ? "90+ days" : `${runway} days`}</p>
         </div>
       </div>
     </motion.div>

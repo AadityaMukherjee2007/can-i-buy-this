@@ -10,9 +10,44 @@ from app.models.transaction import Transaction
 from app.models.scenario import Scenario
 from app.schemas.scenario import EvaluateRequest, EvaluateResponse
 from app.api.deps import get_current_user
-from app.services.decision_engine import evaluate_purchase, _generate_synthetic_data
+from app.services.decision_engine import evaluate_purchase
 
 router = APIRouter(prefix="/api/evaluate", tags=["evaluate"])
+
+
+async def _seed_transactions(db: AsyncSession, business_id: str) -> None:
+    from datetime import datetime, timedelta
+    import random
+    random.seed(42)
+
+    today = datetime.utcnow().date()
+    seeded: list[Transaction] = []
+    bid = str(business_id)[:8]
+    for i in range(22):
+        dt = today - timedelta(days=i * 3 + 2)
+        amt = round(random.uniform(500, 8000), 2)
+        seeded.append(Transaction(
+            business_id=business_id,
+            saltedge_transaction_id=f"seed_{bid}_in_{dt.isoformat()}_{amt}_{i}",
+            amount=amt, date=dt,
+            description=f"Invoice payment — {random.choice(['Client A', 'Client B', 'Consulting', 'Freelance', 'Retainer'])}",
+            category="income", is_inflow=True,
+        ))
+    for i in range(50):
+        dt = today - timedelta(days=i + 1)
+        amount = -round(random.uniform(50, 2500), 2)
+        seeded.append(Transaction(
+            business_id=business_id,
+            saltedge_transaction_id=f"seed_{bid}_out_{dt.isoformat()}_{abs(amount)}_{i}",
+            amount=amount, date=dt,
+            description=random.choice([
+                "Office supplies", "Software subscription", "Utilities",
+                "Contractor payment", "Marketing", "Rent", "Insurance", "Travel"
+            ]),
+            category="expense", is_inflow=False,
+        ))
+    db.add_all(seeded)
+    await db.commit()
 
 
 @router.post("", response_model=EvaluateResponse)
@@ -34,9 +69,26 @@ async def evaluate(
     transactions = result.scalars().all()
 
     if not transactions:
-        current_cash = 10000.0
-        historical_inflows, historical_outflows = _generate_synthetic_data()
-        data_source = "dummy"
+        await _seed_transactions(db, biz.id)
+        data_source = "seeded"
+        current_cash = 0.0
+        historical_inflows = []
+        historical_outflows = []
+        result = await db.execute(
+            select(Transaction).where(Transaction.business_id == biz.id)
+            .order_by(Transaction.date.desc())
+            .limit(500)
+        )
+        transactions = result.scalars().all()
+        for txn in transactions:
+            if txn.amount >= 0:
+                historical_inflows.append(txn.amount)
+            else:
+                historical_outflows.append(abs(txn.amount))
+            if txn.amount > 0:
+                current_cash += txn.amount
+            else:
+                current_cash -= abs(txn.amount)
     else:
         data_source = "real"
         for txn in transactions:

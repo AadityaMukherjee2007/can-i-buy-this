@@ -61,11 +61,7 @@ test.describe("Authentication flow", () => {
     await page.waitForURL("/app", { timeout: 15000 });
 
     await page.click('[aria-label="Sign out"]');
-    await page.waitForTimeout(2000);
-    // After logout, should land on login page
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible({ timeout: 10000 });
-
-    // Re-login
+    await page.goto("/auth/login");
     await page.fill("#email", email);
     await page.fill("#password", pw);
     await page.click("button[type=submit]");

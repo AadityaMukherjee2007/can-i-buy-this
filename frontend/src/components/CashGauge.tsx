@@ -7,16 +7,12 @@ import { fmt } from "@/lib/format";
 interface Props {
   currentCash: number;
   minReserve: number;
-  chartData?: number[];
 }
 
-export default function CashGauge({ currentCash, minReserve, chartData }: Props) {
+export default function CashGauge({ currentCash, minReserve }: Props) {
   const surplus = currentCash - minReserve;
   const ratio = minReserve > 0 ? Math.min(currentCash / minReserve, 2) : (currentCash > 0 ? 1 : 0);
   const fillPct = Math.max(0, Math.round((ratio / 2) * 100));
-
-  const runwayDays = chartData?.length ? chartData.findIndex((v) => v < minReserve) : -1;
-  const runway = runwayDays >= 0 ? runwayDays : (chartData?.length ? 90 : null);
 
   let color: string;
   let label: string;
@@ -70,13 +66,6 @@ export default function CashGauge({ currentCash, minReserve, chartData }: Props)
         <span>$0</span>
         <span>{fmt(minReserve)}</span>
       </div>
-
-      {runway !== null && (
-        <p className="mt-2 text-xs text-slate-500">
-          Runway: <span className="font-semibold text-slate-700">{runway >= 90 ? "90+ days" : `${runway} days`}</span>
-          {surplus < 0 && " before reserve breach"}
-        </p>
-      )}
     </div>
   );
 }

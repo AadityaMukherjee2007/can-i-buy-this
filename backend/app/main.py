@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import engine, Base, async_session_factory
+from app.database import engine, Base
 from app.api import auth, evaluate, business, transactions, saltedge
 
 _is_serverless = os.environ.get("NETLIFY") == "true"
@@ -34,55 +34,6 @@ async def lifespan(app: FastAPI):
                 )
             except Exception:
                 pass
-
-        from app.models.business import Business
-        from app.models.transaction import Transaction
-        from datetime import datetime, timedelta
-        import random
-
-        async with async_session_factory() as session:
-            result = await session.execute(sa.select(Business))
-            businesses = result.scalars().all()
-            for biz in businesses:
-                existing = await session.execute(
-                    sa.select(Transaction).where(Transaction.business_id == biz.id).limit(1)
-                )
-                if existing.scalar_one_or_none():
-                    continue
-                today = datetime.utcnow().date()
-                income_dates = [
-                    today - timedelta(days=d) for d in range(2, 85, 4)
-                ]
-                expense_dates = [
-                    today - timedelta(days=d) for d in range(1, 86, 1)
-                    if d % 3 != 0 and d not in [x for x in range(2, 85, 4)]
-                ]
-                random.shuffle(expense_dates)
-                expense_dates = expense_dates[:min(len(expense_dates), 55)]
-                for dt in income_dates[:20]:
-                    amt = round(random.uniform(200, 5000), 2)
-                    session.add(Transaction(
-                        business_id=biz.id,
-                        saltedge_transaction_id=f"seed_in_{dt.isoformat()}_{amt}",
-                        amount=amt,
-                        date=dt,
-                        description=f"Invoice payment {random.choice(['Client A', 'Client B', 'Consulting', 'Freelance'])}",
-                        category="income",
-                        is_inflow=True,
-                    ))
-                for dt in expense_dates:
-                    amount = -round(random.uniform(10, 1500), 2)
-                    descs = ["Office supplies", "Software subscription", "Utilities", "Contractor payment", "Marketing", "Rent", "Insurance", "Travel"]
-                    session.add(Transaction(
-                        business_id=biz.id,
-                        saltedge_transaction_id=f"seed_out_{dt.isoformat()}_{abs(amount)}",
-                        amount=amount,
-                        date=dt,
-                        description=random.choice(descs),
-                        category="expense",
-                        is_inflow=False,
-                    ))
-                await session.commit()
     yield
 
 

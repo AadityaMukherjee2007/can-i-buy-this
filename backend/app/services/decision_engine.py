@@ -22,6 +22,30 @@ def _calc_daily_rate(amounts: List[float], limits=(0.10, 0.10)) -> float:
     return float(np.mean(np.clip(arr, lo, hi)))
 
 
+def _build_trajectory(
+    current_cash: float,
+    historical_inflows: List[float],
+    historical_outflows: List[float],
+    projection_days: int = 90,
+) -> np.ndarray:
+    rng = np.random.default_rng(42)
+    target_in = _calc_daily_rate(historical_inflows) if historical_inflows else 500.0
+    target_out = _calc_daily_rate(historical_outflows) if historical_outflows else 400.0
+
+    weekday_boost = np.tile([1.0, 1.0, 1.0, 1.0, 1.15, 0.6, 0.4], 13)[:projection_days]
+    raw_in = rng.normal(target_in, target_in * 0.24, projection_days) * weekday_boost
+    raw_out = rng.normal(target_out, target_out * 0.25, projection_days) * weekday_boost
+
+    in_arr = np.clip(raw_in, target_in * 0.1, None)
+    out_arr = np.clip(raw_out, target_out * 0.1, None)
+
+    in_arr *= target_in / max(np.mean(in_arr), 0.01)
+    out_arr *= target_out / max(np.mean(out_arr), 0.01)
+
+    daily_net = in_arr - out_arr
+    return current_cash + np.cumsum(daily_net)
+
+
 def evaluate_purchase(
     current_cash: float,
     min_reserve: float,
@@ -33,12 +57,9 @@ def evaluate_purchase(
     payment_delay_days: int = 0,
     projection_days: int = 90,
 ) -> Dict[str, Any]:
-    daily_in = _calc_daily_rate(historical_inflows)
-    daily_out = _calc_daily_rate(historical_outflows)
-    base_net_daily = daily_in - daily_out
-
+    base_trajectory = _build_trajectory(current_cash, historical_inflows, historical_outflows, projection_days)
+    base_net_daily = _calc_daily_rate(historical_inflows) - _calc_daily_rate(historical_outflows)
     days = np.arange(1, projection_days + 1, dtype=np.float64)
-    base_trajectory = current_cash + (days * base_net_daily)
 
     without_trajectory = base_trajectory.copy()
 
