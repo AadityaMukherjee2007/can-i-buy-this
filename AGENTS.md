@@ -29,18 +29,24 @@ Frontend: `src/app/` (App Router pages), `src/components/` (client components), 
 
 No Alembic migrations — `Base.metadata.create_all` runs on startup via FastAPI lifespan event.
 
+## Deployment (Vercel)
+
+- **Two separate Vercel projects**: frontend (`frontend/`) and backend (`backend/`).
+- **Frontend** → auto-detects Next.js. Set `NEXT_PUBLIC_API_URL` to backend Vercel URL.
+- **Backend** → auto-detects Python FastAPI via `pyproject.toml` entrypoint. Set `DATABASE_URL`, `JWT_SECRET`, `SALTEDGE_APP_ID`, `SALTEDGE_SECRET`, `SALTEDGE_ENV` in Vercel dashboard.
+- **.env.example** is the unified config reference. Copy to `.env` for Docker.
+
 ## Key gotchas
 
 - **Tailwind CSS v4**: uses `@import "tailwindcss"` + `@theme inline {}` directive, NOT v3 `@tailwind`. Configure via CSS, not `tailwind.config`.
 - **Plaid SDK v27**: `Environment.Development` removed. Only `Sandbox` and `Production`.
 - **Celery**: removed (dead code — was only for Plaid sync which had no trigger endpoint).
-- **No `.env` committed**: copy `.env.example`. Config reads via pydantic-settings.
-- **Auth is localStorage-based** (`token`/`user` keys in `src/lib/auth.tsx`). API URL hardcoded to `http://localhost:8000`; override via `NEXT_PUBLIC_API_URL`.
+- **Auth is localStorage-based** (`token`/`user` keys in `src/lib/auth.tsx`). API URL from `NEXT_PUBLIC_API_URL`; default empty (same-origin).
 - **Lint override**: `react-hooks/set-state-in-effect` is disabled for `src/lib/auth.tsx` and `src/hooks/useBusiness.ts` (necessary pattern for localStorage sync).
-- **Backend uses dummy data** ($10k cash, synthetic inflows) when no transactions exist — only activates when `transactions` table is empty.
-- **Plaid sync** (Celery task) exists but has no trigger endpoint – dead code unless invoked manually.
+- **On-demand transaction seeding**: new users get seeded transactions on first `/api/evaluate` call instead of dummy data.
+- **Curvilinear projections**: decision engine uses wavy (weekday-pattern) 90-day cash flow trajectories, not straight lines.
 - **`fmt()`** currency formatter lives in `src/lib/format.ts` — shared across components. Always import from there.
 - **Decision engine** (`app/services/decision_engine.py`) has 12 standalone accuracy tests. No API, DB, or fixture dependencies.
-- **CORS** allows only `http://localhost:3000` — update `backend/app/main.py` if frontend runs elsewhere.
+- **CORS** dynamically allows `http://localhost:3000` + `VERCEL_PROJECT_PRODUCTION_URL` + `VERCEL_URL`.
 - **`backend/Dockerfile`** runs `pip install` with no cache — cache-busts clean.
 - **`frontend/Dockerfile`** runs `npm install` on start (not build-time) for live reload support.
