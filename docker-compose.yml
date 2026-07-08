@@ -8,9 +8,9 @@ services:
       - ./backend:/app
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
-      PLAID_SECRET: ${PLAID_SECRET}
-      PLAID_ENV: sandbox
+      SALTEDGE_APP_ID: ${SALTEDGE_APP_ID}
+      SALTEDGE_SECRET: ${SALTEDGE_SECRET}
+      SALTEDGE_ENV: sandbox
     networks:
       - app-network
 

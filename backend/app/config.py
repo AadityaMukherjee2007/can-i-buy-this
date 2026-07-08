@@ -3,9 +3,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://cibt_user:cibt_pass@localhost:5432/canibuythis"
-    plaid_client_id: str = ""
-    plaid_secret: str = ""
-    plaid_env: str = "sandbox"
+    saltedge_app_id: str = ""
+    saltedge_secret: str = ""
+    saltedge_env: str = "sandbox"
     stripe_secret_key: str = ""
     jwt_secret: str = "super-secret-key-change-in-production"
     jwt_algorithm: str = "HS256"
