@@ -49,9 +49,10 @@ origins = [
     "https://localhost:3000",
 ]
 
-netlify_url = os.environ.get("NETLIFY_URL")
-if netlify_url:
-    origins.append(netlify_url)
+for url_var in ("NETLIFY_URL", "VERCEL_URL", "VERCEL_BRANCH_URL"):
+    url = os.environ.get(url_var)
+    if url:
+        origins.append(f"https://{url}")
 
 app.add_middleware(
     CORSMiddleware,
