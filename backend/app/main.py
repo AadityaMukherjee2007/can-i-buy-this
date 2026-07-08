@@ -4,8 +4,6 @@ from contextlib import asynccontextmanager
 import sqlalchemy as sa
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from mangum import Mangum
-
 from app.database import engine, Base
 from app.api import auth, evaluate, business, transactions, saltedge
 
@@ -73,6 +71,3 @@ app.include_router(saltedge.router)
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
-
-
-handler = Mangum(app)
