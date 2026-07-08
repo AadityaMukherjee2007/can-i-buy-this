@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.business import Business
 from app.models.transaction import Transaction
 from app.api.deps import get_current_user
+from app.config import settings
 from app.services.saltedge_service import (
     create_customer,
     create_connect_session,
@@ -36,9 +37,13 @@ async def get_connect_session(
             await db.commit()
 
         return_to = "http://localhost:3000/settings?connection_completed=1"
+        provider_code = None
+        if settings.saltedge_env == "sandbox":
+            provider_code = "fakebank_simple_xf"
         session = await create_connect_session(
             biz.saltedge_customer_id,
             return_to_url=return_to,
+            provider_code=provider_code,
         )
         return ConnectSessionResponse(connect_url=session["connect_url"])
     except Exception as e:

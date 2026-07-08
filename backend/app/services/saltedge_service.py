@@ -33,23 +33,28 @@ async def create_connect_session(
     customer_id: str,
     return_to_url: str,
     from_date: str = "2024-06-18",
+    provider_code: str | None = None,
 ) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "data": {
+            "customer_id": customer_id,
+            "consent": {
+                "scopes": ["accounts", "transactions"],
+                "from_date": from_date,
+            },
+            "attempt": {
+                "return_to": return_to_url,
+            },
+        }
+    }
+    if provider_code:
+        body["data"]["provider"] = {"code": provider_code}
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"{BASE_URL}/connections/connect",
             headers=_headers(),
-            json={
-                "data": {
-                    "customer_id": customer_id,
-                    "consent": {
-                        "scopes": ["accounts", "transactions"],
-                        "from_date": from_date,
-                    },
-                    "attempt": {
-                        "return_to": return_to_url,
-                    },
-                }
-            },
+            json=body,
         )
         resp.raise_for_status()
         return resp.json()["data"]
