@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
-from app.api import auth, evaluate, plaid, business, transactions
+from app.api import auth, evaluate, business, transactions, saltedge
 
 _is_serverless = os.environ.get("NETLIFY") == "true"
 
@@ -44,9 +44,9 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(evaluate.router)
-app.include_router(plaid.router)
 app.include_router(business.router)
 app.include_router(transactions.router)
+app.include_router(saltedge.router)
 
 
 @app.get("/api/health")
