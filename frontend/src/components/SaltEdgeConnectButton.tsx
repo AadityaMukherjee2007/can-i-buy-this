@@ -36,11 +36,20 @@ export default function SaltEdgeConnectButton({ onSuccess }: Props) {
         if (popup.closed) {
           clearInterval(poll);
           try {
-            const storeRes = await fetch(`${API}/api/saltedge/store-connection`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (storeRes.ok) {
+            let storeRes: Response | null = null;
+            for (let i = 0; i < 5; i++) {
+              storeRes = await fetch(`${API}/api/saltedge/store-connection`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (storeRes.ok) break;
+              if (storeRes.status === 404) {
+                await new Promise((r) => setTimeout(r, 2000));
+                continue;
+              }
+              break;
+            }
+            if (storeRes?.ok) {
               await fetch(`${API}/api/saltedge/transactions`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
