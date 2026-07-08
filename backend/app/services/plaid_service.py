@@ -28,7 +28,7 @@ async def create_link_token(user_id: str) -> dict[str, Any]:
         user=LinkTokenCreateRequestUser(client_user_id=user_id),
         client_name="Can I Buy This",
         products=[Products("transactions")],
-        country_codes=[CountryCode("US")],
+        country_codes=[CountryCode(c) for c in ["US", "CA", "GB", "IE", "FR", "ES", "NL", "DE", "IT", "PT", "DK", "NO", "SE", "EE", "LV", "LT", "PL", "BE"]],
         language="en",
     )
     response = await asyncio.to_thread(client.link_token_create, request)
