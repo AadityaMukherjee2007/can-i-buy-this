@@ -50,7 +50,7 @@ origins = [
     "https://localhost:3000",
 ]
 
-for url_var in ("NETLIFY_URL", "VERCEL_URL", "VERCEL_BRANCH_URL"):
+for url_var in ("NETLIFY_URL", "VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"):
     url = os.environ.get(url_var)
     if url:
         origins.append(f"https://{url}")
