@@ -20,7 +20,8 @@ class BusinessResponse(BaseModel):
     company_name: str
     min_safe_reserve: float
     monthly_burn_rate: Optional[float] = None
-    plaid_item_id: Optional[str] = None
+    saltedge_customer_id: Optional[str] = None
+    saltedge_connection_id: Optional[str] = None
     created_at: datetime
 
     class Config:
