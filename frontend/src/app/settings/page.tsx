@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API } from "@/lib/format";
-import PlaidLinkButton from "@/components/PlaidLinkButton";
+import SaltEdgeConnectButton from "@/components/SaltEdgeConnectButton";
 
 interface BusinessData {
   company_name: string;
@@ -192,7 +192,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <PlaidLinkButton onSuccess={() => setPlaidItemId("linked")} />
+          <SaltEdgeConnectButton onSuccess={() => setPlaidItemId("linked")} />
         </motion.div>
       </main>
     </div>
