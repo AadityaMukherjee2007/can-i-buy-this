@@ -1,7 +1,7 @@
 [project]
 name = "can-i-buy-this-backend"
 version = "1.0.0"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi==0.111.0",
     "uvicorn[standard]==0.30.1",
