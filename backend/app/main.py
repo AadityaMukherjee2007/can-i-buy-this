@@ -82,5 +82,13 @@ async def health_db():
         async with async_session_factory() as s:
             await s.execute(sa.text("SELECT 1"))
             return {"status": "ok", "database": "connected"}
+    except OSError:
+        return {
+            "status": "error",
+            "database": "Cannot connect to database. If using Supabase, enable the "
+            "connection pooler (Supavisor) in your Supabase dashboard and use the "
+            "pooler connection string as DATABASE_URL. Supabase direct "
+            "connections are IPv6-only and Vercel requires IPv4.",
+        }
     except Exception as e:
         return {"status": "error", "database": f"{type(e).__name__}: {e}"}
