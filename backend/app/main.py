@@ -12,17 +12,20 @@ from app.api import auth, evaluate, business, transactions, saltedge
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     if engine is not None:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            for stmt in (
-                "ALTER TABLE businesses RENAME COLUMN plaid_access_token TO saltedge_customer_id",
-                "ALTER TABLE businesses RENAME COLUMN plaid_item_id TO saltedge_connection_id",
-                "ALTER TABLE transactions RENAME COLUMN plaid_transaction_id TO saltedge_transaction_id",
-            ):
-                try:
-                    await conn.execute(sa.text(stmt))
-                except Exception:
-                    pass
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                for stmt in (
+                    "ALTER TABLE businesses RENAME COLUMN plaid_access_token TO saltedge_customer_id",
+                    "ALTER TABLE businesses RENAME COLUMN plaid_item_id TO saltedge_connection_id",
+                    "ALTER TABLE transactions RENAME COLUMN plaid_transaction_id TO saltedge_transaction_id",
+                ):
+                    try:
+                        await conn.execute(sa.text(stmt))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
     yield
 
 
