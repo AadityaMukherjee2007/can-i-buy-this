@@ -41,7 +41,7 @@ else:
     _engine_kwargs["max_overflow"] = _pool_size
 
 connect_args = {}
-if "ssl=require" in _db_url:
+if "ssl=require" in _db_url or "sslmode=require" in _db_url:
     connect_args["ssl"] = "require"
 if connect_args:
     _engine_kwargs["connect_args"] = connect_args
