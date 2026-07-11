@@ -25,6 +25,7 @@ interface Result {
   purchase_cost: number;
 }
 
+
 export default function Dashboard() {
   const router = useRouter();
   const { token, user, loading: authLoading } = useAuth();
@@ -78,6 +79,7 @@ export default function Dashboard() {
   const minReserve = business?.min_safe_reserve ?? 5000;
   const companyName = business?.company_name || user?.full_name || "there";
   const currentCash = result?.current_cash ?? business?.current_cash ?? 0;
+  const currency = business?.currency || "USD";
   const isDummy = result?.data_source === "dummy";
   const isSeeded = result?.data_source === "seeded";
 
@@ -89,12 +91,17 @@ export default function Dashboard() {
             <h1 className="text-lg sm:text-xl font-semibold text-slate-900 truncate">{companyName}</h1>
             <p className="text-sm text-slate-500 mt-0.5">Purchase evaluation</p>
           </div>
-          {result && (
-            <div className="shrink-0 flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-500">
-              <Database className="h-3 w-3" />
-              {isDummy ? "Demo" : isSeeded ? "Sample data" : "Live"}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-500">
+              {currency}
+            </span>
+            {result && (
+              <span className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-500">
+                <Database className="h-3 w-3" />
+                {isDummy ? "Demo" : isSeeded ? "Sample" : "Live"}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
@@ -106,7 +113,7 @@ export default function Dashboard() {
                 transition={{ duration: 0.3 }}
                 className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5"
               >
-                <DashboardForm onSubmit={handleSubmit} loading={loading} />
+                <DashboardForm onSubmit={handleSubmit} loading={loading} currency={currency} />
               </motion.div>
             ) : (
               <DecisionBadge
@@ -119,6 +126,7 @@ export default function Dashboard() {
                 onReset={handleReset}
                 waitDays={result.wait_days}
                 waitDate={result.wait_date}
+                currency={currency}
               />
             )}
 
@@ -139,10 +147,10 @@ export default function Dashboard() {
                   <Shield className="h-4 w-4 text-slate-400 shrink-0" />
                   <div>
                     <p className="text-xs text-slate-400">Safe reserve</p>
-                    <p className="text-sm font-semibold text-slate-900">{fmt(minReserve)}</p>
+                    <p className="text-sm font-semibold text-slate-900">{fmt(minReserve, currency)}</p>
                   </div>
                 </div>
-                <CashGauge currentCash={currentCash} minReserve={minReserve} />
+                <CashGauge currentCash={currentCash} minReserve={minReserve} currency={currency} />
                 {currentCash === 0 && (
                   <p className="text-xs text-slate-400 flex items-center gap-1">
                     <Database className="h-3 w-3" />
@@ -162,11 +170,13 @@ export default function Dashboard() {
                   minReserve={minReserve}
                   waitDays={result.wait_days}
                   waitDate={result.wait_date}
+                  currency={currency}
                 />
                 <div className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
                   <CashGauge
                     currentCash={result.current_cash}
                     minReserve={minReserve}
+                    currency={currency}
                   />
                 </div>
               </>

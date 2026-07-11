@@ -7,9 +7,12 @@ import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API } from "@/lib/format";
 
+const CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD", "BRL", "SGD", "AED"];
+
 interface BusinessData {
   company_name: string;
   min_safe_reserve: number;
+  currency: string;
 }
 
 export default function SettingsPage() {
@@ -17,6 +20,7 @@ export default function SettingsPage() {
   const { token, loading: authLoading } = useAuth();
   const [companyName, setCompanyName] = useState("");
   const [safeReserve, setSafeReserve] = useState("");
+  const [currency, setCurrency] = useState("USD");
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +40,7 @@ export default function SettingsPage() {
       .then((data: BusinessData) => {
         setCompanyName(data.company_name || "");
         setSafeReserve(data.min_safe_reserve?.toString() || "");
+        setCurrency(data.currency || "USD");
       })
       .catch((err) => setError(err.message))
       .finally(() => setFetching(false));
@@ -59,6 +64,7 @@ export default function SettingsPage() {
       if (companyName.trim()) body.company_name = companyName.trim();
       const reserve = parseFloat(safeReserve);
       if (!isNaN(reserve) && reserve >= 0) body.min_safe_reserve = reserve;
+      body.currency = currency;
 
       const res = await fetch(`${API}/api/business/me`, {
         method: "PUT",
@@ -135,6 +141,20 @@ export default function SettingsPage() {
                 />
               </div>
               <p className="mt-1 text-xs text-slate-400">The minimum balance your business should maintain before making purchases.</p>
+            </div>
+
+            <div>
+              <label htmlFor="currency" className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">
+                Currency
+              </label>
+              <select
+                id="currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 hover:border-slate-300 focus:border-slate-400 focus:outline-none transition-colors"
+              >
+                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
 
             {error && (

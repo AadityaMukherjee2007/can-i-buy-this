@@ -8,6 +8,7 @@ interface BusinessData {
   company_name: string;
   min_safe_reserve: number;
   current_cash: number;
+  currency: string;
 }
 
 export function useBusiness() {

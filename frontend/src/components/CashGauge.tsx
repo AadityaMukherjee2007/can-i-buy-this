@@ -7,9 +7,10 @@ import { fmt } from "@/lib/format";
 interface Props {
   currentCash: number;
   minReserve: number;
+  currency?: string;
 }
 
-export default function CashGauge({ currentCash, minReserve }: Props) {
+export default function CashGauge({ currentCash, minReserve, currency }: Props) {
   const surplus = currentCash - minReserve;
   const ratio = minReserve > 0 ? Math.min(currentCash / minReserve, 2) : (currentCash > 0 ? 1 : 0);
   const fillPct = Math.max(0, Math.round((ratio / 2) * 100));
@@ -42,8 +43,8 @@ export default function CashGauge({ currentCash, minReserve }: Props) {
       </div>
 
       <div className="flex items-baseline gap-1.5 mb-2">
-        <span className="text-2xl font-bold text-slate-900">{fmt(currentCash)}</span>
-        <span className="text-xs text-slate-400">of {fmt(minReserve)} reserve</span>
+        <span className="text-2xl font-bold text-slate-900">{fmt(currentCash, currency)}</span>
+        <span className="text-xs text-slate-400">of {fmt(minReserve, currency)} reserve</span>
       </div>
 
       <div
@@ -63,8 +64,8 @@ export default function CashGauge({ currentCash, minReserve }: Props) {
       </div>
 
       <div className="flex justify-between mt-1 text-xs text-slate-400">
-        <span>$0</span>
-        <span>{fmt(minReserve)}</span>
+        <span>{currency ? fmt(0, currency) : "$0"}</span>
+        <span>{fmt(minReserve, currency)}</span>
       </div>
     </div>
   );

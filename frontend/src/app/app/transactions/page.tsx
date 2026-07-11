@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, Trash2, Upload, Download, Database, ArrowUpDown } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Database, ArrowUpDown, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API, fmt } from "@/lib/format";
+import { useBusiness } from "@/hooks/useBusiness";
 
 interface Transaction {
   id: string;
@@ -25,6 +26,7 @@ const CATEGORIES = [
 export default function TransactionsPage() {
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
+  const { business } = useBusiness();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fetching, setFetching] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -34,6 +36,9 @@ export default function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [sortAsc, setSortAsc] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const currency = business?.currency || "USD";
 
   useEffect(() => {
     if (!authLoading && !token) router.push("/auth/login");
@@ -58,7 +63,18 @@ export default function TransactionsPage() {
 
   useEffect(() => { if (token) fetchTx(); }, [token, fetchTx]);
 
-  const sorted = [...transactions].sort((a, b) =>
+  const filtered = useMemo(() => {
+    if (!search.trim()) return transactions;
+    const q = search.toLowerCase();
+    return transactions.filter((t) =>
+      (t.description?.toLowerCase() ?? "").includes(q) ||
+      (t.category?.toLowerCase() ?? "").includes(q) ||
+      t.date.includes(q) ||
+      Math.abs(t.amount).toString().includes(q)
+    );
+  }, [transactions, search]);
+
+  const sorted = [...filtered].sort((a, b) =>
     sortAsc ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
   );
 
@@ -205,6 +221,19 @@ export default function TransactionsPage() {
           <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{success}</div>
         )}
 
+        {transactions.length > 0 && (
+          <div className="mb-4 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by description, category, date, or amount..."
+              className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 hover:border-slate-300 focus:border-slate-400 focus:outline-none transition-colors"
+            />
+          </div>
+        )}
+
         {showForm && (
           <motion.form
             initial={{ opacity: 0, y: -8 }}
@@ -214,7 +243,7 @@ export default function TransactionsPage() {
           >
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Amount ($)</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Amount ({currency})</label>
                 <input
                   type="number" step="0.01" required
                   value={form.amount}
@@ -311,17 +340,23 @@ export default function TransactionsPage() {
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center">
             <Database className="h-10 w-10 text-slate-300 mb-4" />
-            <p className="text-sm font-medium text-slate-700">No transactions yet</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              Add transactions manually or import from CSV to get started.
+            <p className="text-sm font-medium text-slate-700">
+              {search ? "No matching transactions" : "No transactions yet"}
             </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-            >
-              <Plus className="h-4 w-4 inline mr-1" />
-              Add your first transaction
-            </button>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs">
+              {search
+                ? "Try a different search term."
+                : "Add transactions manually or import from CSV to get started."}
+            </p>
+            {!search && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                <Plus className="h-4 w-4 inline mr-1" />
+                Add your first transaction
+              </button>
+            )}
           </div>
         ) : (
           <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
@@ -357,7 +392,7 @@ export default function TransactionsPage() {
                       <td className={`px-4 py-2.5 text-sm font-medium text-right whitespace-nowrap ${
                         (tx.is_inflow ?? tx.amount > 0) ? "text-emerald-600" : "text-red-600"
                       }`}>
-                        {(tx.is_inflow ?? tx.amount > 0) ? "+" : ""}{fmt(Math.abs(tx.amount))}
+                        {(tx.is_inflow ?? tx.amount > 0) ? "+" : ""}{fmt(Math.abs(tx.amount), currency)}
                       </td>
                       <td className="px-2 py-2.5">
                         <button
@@ -373,8 +408,11 @@ export default function TransactionsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400">
-              {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}
+            <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400 flex justify-between">
+              <span>{filtered.length} of {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}</span>
+              {search && filtered.length > 0 && (
+                <span className="text-slate-400">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
+              )}
             </div>
           </div>
         )}

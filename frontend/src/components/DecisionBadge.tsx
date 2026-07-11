@@ -14,6 +14,7 @@ interface Props {
   onReset?: () => void;
   waitDays?: number | null;
   waitDate?: string | null;
+  currency?: string;
 }
 
 const DECISIONS: Record<string, { label: string; border: string; bg: string; text: string; sub: string }> = {
@@ -27,7 +28,7 @@ function formatDate(iso: string): string {
 }
 
 export default function DecisionBadge({
-  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset, waitDays, waitDate,
+  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset, waitDays, waitDate, currency,
 }: Props) {
   const c = DECISIONS[decision as keyof typeof DECISIONS] ?? DECISIONS.NO;
 
@@ -75,7 +76,7 @@ export default function DecisionBadge({
           )}
           {decision === "YES" && purchaseCost > 0 && (
             <p className="mt-2 text-xs text-emerald-600">
-              Purchase cost of {fmt(purchaseCost)} is within safe limits — no waiting needed.
+              Purchase cost of {fmt(purchaseCost, currency)} is within safe limits.
             </p>
           )}
           {decision === "NO" && runway < 90 && (
@@ -98,15 +99,15 @@ export default function DecisionBadge({
       <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3">
         <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
           <p className="text-[11px] sm:text-xs text-slate-400 truncate">Purchase cost</p>
-          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(purchaseCost)}</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(purchaseCost, currency)}</p>
         </div>
         <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
           <p className="text-[11px] sm:text-xs text-slate-400 truncate">Day 90 balance</p>
-          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(endBalance)}</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(endBalance, currency)}</p>
         </div>
         <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
           <p className="text-[11px] sm:text-xs text-slate-400 truncate">Cash impact</p>
-          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(costImpact)}</p>
+          <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{fmt(costImpact, currency)}</p>
         </div>
         <div className="rounded-md bg-white/80 px-2.5 py-2 sm:px-3 min-w-0">
           <p className="text-[11px] sm:text-xs text-slate-400 truncate">Runway</p>

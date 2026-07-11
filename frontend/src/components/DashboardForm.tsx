@@ -20,7 +20,13 @@ interface Props {
     payment_delay_days: number;
   }) => void;
   loading: boolean;
+  currency?: string;
 }
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", INR: "₹", JPY: "¥",
+  CAD: "CA$", AUD: "A$", BRL: "R$", SGD: "S$", AED: "د.إ",
+};
 
 function parseNum(v: string): number {
   const n = parseFloat(v);
@@ -32,7 +38,8 @@ function parseIntNum(v: string): number {
   return isNaN(n) ? NaN : n;
 }
 
-export default function DashboardForm({ onSubmit, loading }: Props) {
+export default function DashboardForm({ onSubmit, loading, currency }: Props) {
+  const symbol = currency ? (CURRENCY_SYMBOLS[currency] ?? currency) : "$";
   const [form, setForm] = useState<FormData>({
     purchase_name: "",
     purchase_cost: "",
@@ -100,7 +107,7 @@ export default function DashboardForm({ onSubmit, loading }: Props) {
             One-time cost
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">$</span>
+            <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">{symbol}</span>
             <input
               id="purchase_cost"
               type="number"
@@ -120,7 +127,7 @@ export default function DashboardForm({ onSubmit, loading }: Props) {
             Per month
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">$</span>
+            <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">{symbol}</span>
             <input
               id="recurring_cost"
               type="number"
@@ -146,7 +153,7 @@ export default function DashboardForm({ onSubmit, loading }: Props) {
               Revenue generated
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">$</span>
+              <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">{symbol}</span>
               <input
                 id="expected_revenue"
                 type="number"

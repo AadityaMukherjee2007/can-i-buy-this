@@ -20,13 +20,14 @@ interface Props {
   minReserve: number;
   waitDays?: number | null;
   waitDate?: string | null;
+  currency?: string;
 }
 
 function formatDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: number }) {
+function ChartTooltip({ active, payload, label, currency }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: number; currency?: string }) {
   if (!active || !payload || payload.length === 0) return null;
   const wp = payload.find((p) => p.dataKey === "withPurchase")?.value ?? 0;
   const wop = payload.find((p) => p.dataKey === "withoutPurchase")?.value ?? 0;
@@ -37,16 +38,16 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       <div className="space-y-0.5">
         <p className="flex justify-between gap-4">
           <span className="text-slate-500">Without purchase</span>
-          <span className="font-medium text-slate-700">{fmt(wop)}</span>
+          <span className="font-medium text-slate-700">{fmt(wop, currency)}</span>
         </p>
         <p className="flex justify-between gap-4">
           <span className="text-slate-500">With purchase</span>
-          <span className="font-medium text-slate-900">{fmt(wp)}</span>
+          <span className="font-medium text-slate-900">{fmt(wp, currency)}</span>
         </p>
         <div className="border-t border-slate-100 mt-1 pt-1 flex justify-between gap-4">
           <span className="text-slate-500">Difference</span>
           <span className={`font-medium ${diff >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {diff >= 0 ? "+" : ""}{fmt(diff)}
+            {diff >= 0 ? "+" : ""}{fmt(diff, currency)}
           </span>
         </div>
       </div>
@@ -54,7 +55,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   );
 }
 
-export default function CashFlowChart({ withPurchase, withoutPurchase, minReserve, waitDays, waitDate }: Props) {
+export default function CashFlowChart({ withPurchase, withoutPurchase, minReserve, waitDays, waitDate, currency }: Props) {
   const chartData = withPurchase.map((value, i) => ({
     day: i + 1,
     withPurchase: Math.round(value * 100) / 100,
@@ -84,10 +85,10 @@ export default function CashFlowChart({ withPurchase, withoutPurchase, minReserv
               tick={{ fontSize: 11, fill: "#94a3b8" }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={fmt}
+              tickFormatter={(v) => fmt(v, currency)}
               width={72}
             />
-            <Tooltip content={<ChartTooltip />} />
+            <Tooltip content={<ChartTooltip currency={currency} />} />
             <Legend
               formatter={(value: string) => (value === "withPurchase" ? "With purchase" : "Without purchase")}
               wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}

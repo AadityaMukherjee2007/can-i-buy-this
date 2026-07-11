@@ -38,6 +38,8 @@ async def update_my_business(
         biz.company_name = payload.company_name
     if payload.min_safe_reserve is not None:
         biz.min_safe_reserve = payload.min_safe_reserve
+    if payload.currency is not None:
+        biz.currency = payload.currency
     await db.commit()
     await db.refresh(biz)
     return BusinessResponse.model_validate(biz)
