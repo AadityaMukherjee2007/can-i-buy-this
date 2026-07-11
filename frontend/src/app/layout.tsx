@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import AuthNav from "@/components/AuthNav";
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <AuthNav />
             {children}
           </AuthProvider>
+          <Analytics />
         </ErrorBoundary>
       </body>
     </html>

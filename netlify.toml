@@ -3,7 +3,7 @@
   command = "cp -r backend netlify/functions/backend && rm -rf netlify/functions/backend/__pycache__ netlify/functions/backend/.pytest_cache && cd frontend && npm run build && cd .."
   publish = "frontend/out/"
   environment = { NEXT_PUBLIC_API_URL = "" }
-# PLAID_CLIENT_ID, PLAID_SECRET, PLAID_ENV set in Netlify Dashboard env vars
+# DATABASE_URL, JWT_SECRET set in Netlify Dashboard env vars
 
 # API routes — handled by the Python serverless function (must be first)
 [[redirects]]

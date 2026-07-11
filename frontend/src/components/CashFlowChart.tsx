@@ -19,9 +19,42 @@ interface Props {
   withoutPurchase: number[];
   minReserve: number;
   waitDays?: number | null;
+  waitDate?: string | null;
 }
 
-export default function CashFlowChart({ withPurchase, withoutPurchase, minReserve, waitDays }: Props) {
+function formatDate(iso: string): string {
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: number }) {
+  if (!active || !payload || payload.length === 0) return null;
+  const wp = payload.find((p) => p.dataKey === "withPurchase")?.value ?? 0;
+  const wop = payload.find((p) => p.dataKey === "withoutPurchase")?.value ?? 0;
+  const diff = wp - wop;
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+      <p className="font-medium text-slate-700 mb-1">{label === 1 ? "Today" : `Day ${label}`}</p>
+      <div className="space-y-0.5">
+        <p className="flex justify-between gap-4">
+          <span className="text-slate-500">Without purchase</span>
+          <span className="font-medium text-slate-700">{fmt(wop)}</span>
+        </p>
+        <p className="flex justify-between gap-4">
+          <span className="text-slate-500">With purchase</span>
+          <span className="font-medium text-slate-900">{fmt(wp)}</span>
+        </p>
+        <div className="border-t border-slate-100 mt-1 pt-1 flex justify-between gap-4">
+          <span className="text-slate-500">Difference</span>
+          <span className={`font-medium ${diff >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {diff >= 0 ? "+" : ""}{fmt(diff)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CashFlowChart({ withPurchase, withoutPurchase, minReserve, waitDays, waitDate }: Props) {
   const chartData = withPurchase.map((value, i) => ({
     day: i + 1,
     withPurchase: Math.round(value * 100) / 100,
@@ -35,9 +68,9 @@ export default function CashFlowChart({ withPurchase, withoutPurchase, minReserv
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">90-Day Cash Flow</h3>
-      <div className="h-48 sm:h-64">
+      <div className="h-56 sm:h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 4 }}>
+          <LineChart data={chartData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
               dataKey="day"
@@ -52,22 +85,9 @@ export default function CashFlowChart({ withPurchase, withoutPurchase, minReserv
               tickLine={false}
               axisLine={false}
               tickFormatter={fmt}
-              width={64}
+              width={72}
             />
-            <Tooltip
-              formatter={(value, name) => {
-                const v = Number(value) || 0;
-                return [fmt(v), name === "withPurchase" ? "With purchase" : "Without purchase"];
-              }}
-              labelFormatter={(label) => label === 1 ? "Today" : `Day ${label}`}
-              contentStyle={{
-                background: "#fff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "12px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}
-            />
+            <Tooltip content={<ChartTooltip />} />
             <Legend
               formatter={(value: string) => (value === "withPurchase" ? "With purchase" : "Without purchase")}
               wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}
@@ -92,7 +112,7 @@ export default function CashFlowChart({ withPurchase, withoutPurchase, minReserv
                 strokeWidth={1.5}
                 strokeDasharray="3 3"
                 label={{
-                  value: "Buy on day " + waitDays,
+                  value: waitDate ? formatDate(waitDate) : "Buy on day " + waitDays,
                   position: "top",
                   fill: "#f59e0b",
                   fontSize: 10,

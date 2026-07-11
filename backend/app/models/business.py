@@ -16,8 +16,6 @@ class Business(Base):
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)
     min_safe_reserve: Mapped[float] = mapped_column(Float, default=5000.0)
     monthly_burn_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
-    saltedge_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    saltedge_connection_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

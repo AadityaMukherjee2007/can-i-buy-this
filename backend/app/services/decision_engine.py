@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import numpy as np
 from typing import Dict, Any, List
 
@@ -46,6 +48,19 @@ def _build_trajectory(
     return current_cash + np.cumsum(daily_net)
 
 
+def _ramp_up_revenue(expected_revenue: float, start_day: int, projection_days: int) -> np.ndarray:
+    impact = np.zeros(projection_days, dtype=np.float64)
+    if expected_revenue <= 0:
+        return impact
+    ramp_duration = 60
+    for day in range(start_day, projection_days):
+        days_since_start = day - start_day
+        ramp_factor = min(days_since_start / ramp_duration, 1.0)
+        monthly_cycles = days_since_start / 30.0
+        impact[day] = expected_revenue * monthly_cycles * ramp_factor
+    return impact
+
+
 def evaluate_purchase(
     current_cash: float,
     min_reserve: float,
@@ -57,35 +72,26 @@ def evaluate_purchase(
     payment_delay_days: int = 0,
     projection_days: int = 90,
 ) -> Dict[str, Any]:
+    today = datetime.utcnow().date()
     base_trajectory = _build_trajectory(current_cash, historical_inflows, historical_outflows, projection_days)
     base_net_daily = _calc_daily_rate(historical_inflows) - _calc_daily_rate(historical_outflows)
     days = np.arange(1, projection_days + 1, dtype=np.float64)
 
     without_trajectory = base_trajectory.copy()
+    cost_day = min(payment_delay_days, projection_days)
 
-    # Revenue impact: starts after purchase is made (payment_delay_days)
-    revenue_daily = expected_revenue / 30.0
-    revenue_impact = np.zeros(projection_days, dtype=np.float64)
-    if expected_revenue > 0:
-        rev_start = max(payment_delay_days, 1)
-        rev_days = np.arange(1, projection_days - rev_start + 1)
-        revenue_impact[rev_start:] = np.floor(rev_days / 30) * expected_revenue
+    revenue_impact = _ramp_up_revenue(expected_revenue, cost_day, projection_days)
 
-    # Build with-purchase trajectory
     with_trajectory = base_trajectory + revenue_impact
 
-    # Apply purchase cost at the delay point
-    cost_day = min(payment_delay_days, projection_days)
     if payment_delay_days == 0:
         with_trajectory -= purchase_cost
     elif cost_day > 0:
         with_trajectory[cost_day - 1:] -= purchase_cost
 
-    # Apply recurring cost
     recurring_impact = np.floor(days / 30) * recurring_cost
     with_trajectory -= recurring_impact
 
-    # Can't afford the purchase at all
     cash_at_payment = current_cash if payment_delay_days == 0 else float(base_trajectory[cost_day - 1] if cost_day > 0 else current_cash)
     if cash_at_payment < purchase_cost:
         return {
@@ -99,7 +105,6 @@ def evaluate_purchase(
             "without_purchase_trajectory": without_trajectory.tolist(),
         }
 
-    # Purchase never dips below reserve
     if np.all(with_trajectory >= min_reserve):
         remaining = float(np.min(with_trajectory))
         parts = []
@@ -118,7 +123,6 @@ def evaluate_purchase(
             "without_purchase_trajectory": without_trajectory.tolist(),
         }
 
-    # Cash flow is fundamentally declining — waiting can't help
     if base_net_daily <= 0:
         return {
             "decision": "NO",
@@ -131,7 +135,6 @@ def evaluate_purchase(
             "without_purchase_trajectory": without_trajectory.tolist(),
         }
 
-    # Cash flow is positive — try waiting to build up enough buffer
     for wait_d in range(1, projection_days):
         cash_on_wait_day = float(base_trajectory[wait_d - 1])
         if cash_on_wait_day < purchase_cost:
@@ -147,11 +150,12 @@ def evaluate_purchase(
             shifted[wait_d:] -= np.floor(post_days / 30) * recurring_cost
 
         if expected_revenue > 0 and wait_d < projection_days:
-            rev_days_after = np.arange(1, projection_days - wait_d + 1)
-            shifted[wait_d:] += np.floor(rev_days_after / 30) * expected_revenue
+            rev_impact = _ramp_up_revenue(expected_revenue, wait_d, projection_days)
+            shifted += rev_impact
 
         if np.all(shifted[wait_d:] >= min_reserve):
             projected_balance = float(base_trajectory[wait_d - 1])
+            wait_date = (today + timedelta(days=int(wait_d))).isoformat()
             parts = []
             if expected_revenue > 0:
                 parts.append(f" (adding ${expected_revenue:.2f}/mo in revenue)")
@@ -163,6 +167,7 @@ def evaluate_purchase(
                     + "".join(parts) + "."
                 ),
                 "wait_days": int(wait_d),
+                "wait_date": wait_date,
                 "chart_data": shifted.tolist(),
                 "without_purchase_trajectory": without_trajectory.tolist(),
             }

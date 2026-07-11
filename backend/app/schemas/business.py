@@ -5,13 +5,8 @@ from typing import Optional
 
 
 class BusinessCreate(BaseModel):
-    company_name: str
+    company_name: str = Field(..., min_length=1, max_length=255)
     min_safe_reserve: float = Field(5000.0, ge=0)
-
-
-class BusinessUpdate(BaseModel):
-    company_name: Optional[str] = None
-    min_safe_reserve: Optional[float] = Field(None, ge=0)
 
 
 class BusinessResponse(BaseModel):
@@ -19,11 +14,15 @@ class BusinessResponse(BaseModel):
     user_id: UUID
     company_name: str
     min_safe_reserve: float
-    monthly_burn_rate: Optional[float] = None
+    monthly_burn_rate: float | None
     current_cash: float = 0.0
-    saltedge_customer_id: Optional[str] = None
-    saltedge_connection_id: Optional[str] = None
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class BusinessUpdate(BaseModel):
+    company_name: Optional[str] = None
+    min_safe_reserve: Optional[float] = None

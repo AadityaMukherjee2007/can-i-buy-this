@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.database import engine, Base
-from app.api import auth, evaluate, business, transactions, saltedge
+from app.api import auth, evaluate, business, transactions
 
 
 @asynccontextmanager
@@ -51,7 +51,6 @@ app.include_router(auth.router)
 app.include_router(evaluate.router)
 app.include_router(business.router)
 app.include_router(transactions.router)
-app.include_router(saltedge.router)
 
 
 @app.exception_handler(Exception)

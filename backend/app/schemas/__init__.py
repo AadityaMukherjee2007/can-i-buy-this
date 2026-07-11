@@ -1,6 +1,6 @@
 from app.schemas.user import UserCreate, UserResponse, UserLogin, TokenResponse
 from app.schemas.business import BusinessCreate, BusinessResponse, BusinessUpdate
-from app.schemas.transaction import TransactionResponse
+from app.schemas.transaction import TransactionResponse, TransactionCreate
 from app.schemas.scenario import EvaluateRequest, EvaluateResponse
 
 __all__ = [

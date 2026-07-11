@@ -8,9 +8,7 @@ services:
       - ./backend:/app
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      SALTEDGE_APP_ID: ${SALTEDGE_APP_ID}
-      SALTEDGE_SECRET: ${SALTEDGE_SECRET}
-      SALTEDGE_ENV: sandbox
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - app-network
 

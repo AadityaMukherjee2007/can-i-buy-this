@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Wallet } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export default function AuthNav() {
@@ -18,8 +18,15 @@ export default function AuthNav() {
         {loading ? (
           <div className="h-8 w-20" />
         ) : user ? (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-500 hidden sm:inline">{user.full_name}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500 hidden sm:inline mr-1">{user.full_name}</span>
+            <Link
+              href="/app/transactions"
+              className="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label="Transactions"
+            >
+              <Wallet className="h-4 w-4" />
+            </Link>
             <Link
               href="/settings"
               className="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"

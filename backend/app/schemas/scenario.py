@@ -15,6 +15,7 @@ class EvaluateResponse(BaseModel):
     decision: str
     reason: str
     wait_days: Optional[int] = None
+    wait_date: Optional[str] = None
     chart_data: list[float]
     current_cash: float
     without_purchase_trajectory: list[float]

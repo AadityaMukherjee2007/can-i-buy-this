@@ -22,13 +22,11 @@ async def _seed_transactions(db: AsyncSession, business_id: str) -> None:
 
     today = datetime.utcnow().date()
     seeded: list[Transaction] = []
-    bid = str(business_id)[:8]
     for i in range(22):
         dt = today - timedelta(days=i * 3 + 2)
         amt = round(random.uniform(500, 8000), 2)
         seeded.append(Transaction(
             business_id=business_id,
-            saltedge_transaction_id=f"seed_{bid}_in_{dt.isoformat()}_{amt}_{i}",
             amount=amt, date=dt,
             description=f"Invoice payment — {random.choice(['Client A', 'Client B', 'Consulting', 'Freelance', 'Retainer'])}",
             category="income", is_inflow=True,
@@ -38,7 +36,6 @@ async def _seed_transactions(db: AsyncSession, business_id: str) -> None:
         amount = -round(random.uniform(50, 2500), 2)
         seeded.append(Transaction(
             business_id=business_id,
-            saltedge_transaction_id=f"seed_{bid}_out_{dt.isoformat()}_{abs(amount)}_{i}",
             amount=amount, date=dt,
             description=random.choice([
                 "Office supplies", "Software subscription", "Utilities",
@@ -134,6 +131,7 @@ async def evaluate(
         decision=decision["decision"],
         reason=decision["reason"],
         wait_days=decision.get("wait_days"),
+        wait_date=decision.get("wait_date"),
         chart_data=decision["chart_data"],
         current_cash=float(current_cash),
         without_purchase_trajectory=decision["without_purchase_trajectory"],

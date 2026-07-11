@@ -13,6 +13,7 @@ interface Props {
   withoutPurchaseData: number[];
   onReset?: () => void;
   waitDays?: number | null;
+  waitDate?: string | null;
 }
 
 const DECISIONS: Record<string, { label: string; border: string; bg: string; text: string; sub: string }> = {
@@ -21,8 +22,12 @@ const DECISIONS: Record<string, { label: string; border: string; bg: string; tex
   WAIT: { border: "border-l-amber-500", bg: "bg-amber-50", text: "text-amber-700", sub: "text-amber-600", label: "Wait" },
 };
 
+function formatDate(iso: string): string {
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export default function DecisionBadge({
-  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset, waitDays,
+  decision, reason, minReserve, purchaseCost, chartData, withoutPurchaseData, onReset, waitDays, waitDate,
 }: Props) {
   const c = DECISIONS[decision as keyof typeof DECISIONS] ?? DECISIONS.NO;
 
@@ -38,14 +43,14 @@ export default function DecisionBadge({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`border-l-4 ${c.border} ${c.bg} rounded-r-lg p-5`}
+      className={`border-l-4 ${c.border} ${c.bg} rounded-r-lg p-4 sm:p-5`}
       role="status"
       aria-live="polite"
     >
       <div className="flex items-start justify-between">
-        <div>
-          <p className={`text-3xl font-bold tracking-tight ${c.text}`}>{c.label}</p>
-          <p className={`mt-1 text-sm ${c.sub}`}>{reason}</p>
+        <div className="min-w-0">
+          <p className={`text-2xl sm:text-3xl font-bold tracking-tight ${c.text}`}>{c.label}</p>
+          <p className={`mt-1 text-xs sm:text-sm ${c.sub}`}>{reason}</p>
           {decision === "WAIT" && waitDays != null && (
             <div className="mt-3 flex items-center gap-3">
               <div className="relative h-8 w-8 shrink-0">
@@ -63,10 +68,20 @@ export default function DecisionBadge({
                 </span>
               </div>
               <div>
-                <p className="text-xs font-medium text-amber-700">Buy on day {waitDays}</p>
+                <p className="text-xs font-medium text-amber-700">Wait until {waitDate ? formatDate(waitDate) : `day ${waitDays}`}</p>
                 <p className="text-[11px] text-amber-500">{90 - waitDays} days of runway remaining</p>
               </div>
             </div>
+          )}
+          {decision === "YES" && purchaseCost > 0 && (
+            <p className="mt-2 text-xs text-emerald-600">
+              Purchase cost of {fmt(purchaseCost)} is within safe limits — no waiting needed.
+            </p>
+          )}
+          {decision === "NO" && runway < 90 && (
+            <p className="mt-2 text-xs text-red-600">
+              Cash reserve breached on day {runwayDays + 1} — {runwayDays < 30 ? "within the first month" : "within 90 days"}.
+            </p>
           )}
         </div>
         {onReset && (
