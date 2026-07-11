@@ -1,8 +1,10 @@
 # Environment
 .env
+.env.local
 .env.*.local
 .env.production
 .env.development
+.env.staging
 
 # Python
 __pycache__/
@@ -27,9 +29,11 @@ instance/
 # Node
 node_modules/
 .next/
+.turbo/
 out/
 *.tsbuildinfo
 next-env.d.ts
+.eslintcache
 
 # IDE
 .vscode/

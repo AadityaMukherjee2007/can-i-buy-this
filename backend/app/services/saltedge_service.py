@@ -32,7 +32,7 @@ async def create_customer(identifier: str) -> dict[str, Any]:
 async def create_connect_session(
     customer_id: str,
     return_to_url: str,
-    from_date: str = "2024-06-18",
+    from_date: str = "2024-07-01",
     provider_code: str | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
@@ -109,7 +109,7 @@ async def get_transactions(
 
 async def fetch_all_transactions(
     customer_id: str,
-    from_date: str = "2024-06-18",
+    from_date: str = "2024-07-01",
 ) -> list[dict[str, Any]]:
     connections = await get_connections(customer_id)
     all_transactions: list[dict[str, Any]] = []

@@ -1,22 +1,4 @@
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: cibt_user
-      POSTGRES_PASSWORD: cibt_pass
-      POSTGRES_DB: canibuythis
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: pg_isready -U cibt_user -d canibuythis
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    networks:
-      - app-network
-
   backend:
     build: ./backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -25,13 +7,10 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      DATABASE_URL: postgresql+asyncpg://cibt_user:cibt_pass@db:5432/canibuythis
+      DATABASE_URL: ${DATABASE_URL}
       SALTEDGE_APP_ID: ${SALTEDGE_APP_ID}
       SALTEDGE_SECRET: ${SALTEDGE_SECRET}
       SALTEDGE_ENV: sandbox
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - app-network
 
@@ -49,9 +28,6 @@ services:
       - backend
     networks:
       - app-network
-
-volumes:
-  pgdata:
 
 networks:
   app-network:
