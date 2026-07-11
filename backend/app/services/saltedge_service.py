@@ -32,18 +32,23 @@ async def create_customer(identifier: str) -> dict[str, Any]:
 async def create_connect_session(
     customer_id: str,
     return_to_url: str,
-    from_date: str = "2024-07-01",
+    from_date: str | None = None,
     provider_code: str | None = None,
 ) -> dict[str, Any]:
+    from datetime import datetime, timedelta
+
     body: dict[str, Any] = {
         "data": {
             "customer_id": customer_id,
             "consent": {
                 "scopes": ["accounts", "transactions"],
-                "from_date": from_date,
+                "from_date": from_date or (datetime.utcnow() - timedelta(days=730)).strftime("%Y-%m-%d"),
             },
             "attempt": {
                 "return_to": return_to_url,
+            },
+            "provider": {
+                "include_sandboxes": True,
             },
         }
     }
@@ -109,7 +114,7 @@ async def get_transactions(
 
 async def fetch_all_transactions(
     customer_id: str,
-    from_date: str = "2024-07-01",
+    from_date: str | None = None,
 ) -> list[dict[str, Any]]:
     connections = await get_connections(customer_id)
     all_transactions: list[dict[str, Any]] = []

@@ -37,13 +37,10 @@ async def get_connect_session(
             await db.commit()
 
         return_to = "http://localhost:3000/settings?connection_completed=1"
-        provider_code = None
-        if settings.saltedge_env == "sandbox":
-            provider_code = "fakebank_simple_xf"
         session = await create_connect_session(
             biz.saltedge_customer_id,
             return_to_url=return_to,
-            provider_code=provider_code,
+            provider_code=None,
         )
         return ConnectSessionResponse(connect_url=session["connect_url"])
     except Exception as e:
