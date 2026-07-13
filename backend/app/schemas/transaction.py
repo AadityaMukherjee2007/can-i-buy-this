@@ -26,3 +26,10 @@ class TransactionCreate(BaseModel):
 
 class BulkTransactionCreate(BaseModel):
     transactions: list[TransactionCreate]
+
+
+class PaginatedTransactions(BaseModel):
+    items: list[TransactionResponse]
+    total: int
+    page: int
+    per_page: int

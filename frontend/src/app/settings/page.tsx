@@ -1,50 +1,67 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API } from "@/lib/format";
+import { useBusiness } from "@/hooks/useBusiness";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD", "BRL", "SGD", "AED"];
 
-interface BusinessData {
-  company_name: string;
-  min_safe_reserve: number;
-  currency: string;
-}
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", INR: "₹", JPY: "¥",
+  CAD: "CA$", AUD: "A$", BRL: "R$", SGD: "S$", AED: "د.إ",
+};
 
 export default function SettingsPage() {
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
+  const { business, refetch } = useBusiness();
   const [companyName, setCompanyName] = useState("");
   const [safeReserve, setSafeReserve] = useState("");
   const [currency, setCurrency] = useState("USD");
+  const [initialCurrency, setInitialCurrency] = useState("USD");
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const currencyWarning = currency !== initialCurrency && initialCurrency !== "";
+  const fetchedOnce = useRef(false);
 
   useEffect(() => {
     if (authLoading) return;
     if (!token) { router.push("/auth/login"); return; }
 
-    fetch(`${API}/api/business/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load business data");
-        return res.json();
+    if (business && !fetchedOnce.current) {
+      fetchedOnce.current = true;
+      setCompanyName(business.company_name || "");
+      setSafeReserve(business.min_safe_reserve?.toString() || "");
+      setCurrency(business.currency || "USD");
+      setInitialCurrency(business.currency || "USD");
+      setFetching(false);
+    } else if (!business && !fetchedOnce.current) {
+      fetch(`${API}/api/business/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .then((data: BusinessData) => {
-        setCompanyName(data.company_name || "");
-        setSafeReserve(data.min_safe_reserve?.toString() || "");
-        setCurrency(data.currency || "USD");
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setFetching(false));
-  }, [token, authLoading, router]);
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to load business data");
+          return res.json();
+        })
+        .then((data: { company_name: string; min_safe_reserve: number; currency: string }) => {
+          fetchedOnce.current = true;
+          setCompanyName(data.company_name || "");
+          setSafeReserve(data.min_safe_reserve?.toString() || "");
+          setCurrency(data.currency || "USD");
+          setInitialCurrency(data.currency || "USD");
+        })
+        .catch((err) => setError(err.message))
+        .finally(() => setFetching(false));
+    } else {
+      setFetching(false);
+    }
+  }, [token, authLoading, router, business]);
 
   useEffect(() => {
     if (success) {
@@ -80,7 +97,9 @@ export default function SettingsPage() {
         throw new Error(bodyErr?.detail || `Save failed (${res.status})`);
       }
 
-      setSuccess("Settings saved");
+      setInitialCurrency(currency);
+      setSuccess(currency !== initialCurrency ? "Currency changed — all amounts converted" : "Settings saved");
+      refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -128,7 +147,7 @@ export default function SettingsPage() {
                 Minimum safe reserve
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">$</span>
+                <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">{CURRENCY_SYMBOLS[currency] || currency}</span>
                 <input
                   id="safeReserve"
                   type="number"
@@ -155,6 +174,12 @@ export default function SettingsPage() {
               >
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+              {currencyWarning && (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+                  Changing currency will convert all transaction amounts and your safe reserve using live exchange rates.
+                </div>
+              )}
             </div>
 
             {error && (

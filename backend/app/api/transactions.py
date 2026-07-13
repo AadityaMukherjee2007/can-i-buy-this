@@ -9,26 +9,29 @@ from app.database import get_session
 from app.models.user import User
 from app.models.transaction import Transaction
 from app.api.deps import get_current_user
-from app.schemas.transaction import TransactionResponse, TransactionCreate, BulkTransactionCreate
+from app.schemas.transaction import TransactionResponse, TransactionCreate, BulkTransactionCreate, PaginatedTransactions
+from sqlalchemy import func
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
 
-@router.get("", response_model=list[TransactionResponse])
+@router.get("", response_model=PaginatedTransactions)
 async def list_transactions(
-    limit: int = Query(100, ge=1, le=500),
-    offset: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(25, ge=1, le=100),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
+    base = select(Transaction).where(Transaction.business_id == user.business.id)
+    total_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total = total_result.scalar() or 0
     result = await db.execute(
-        select(Transaction)
-        .where(Transaction.business_id == user.business.id)
-        .order_by(desc(Transaction.date))
-        .offset(offset)
-        .limit(limit)
+        base.order_by(desc(Transaction.date))
+        .offset((page - 1) * per_page)
+        .limit(per_page)
     )
-    return [TransactionResponse.model_validate(t) for t in result.scalars().all()]
+    items = [TransactionResponse.model_validate(t) for t in result.scalars().all()]
+    return PaginatedTransactions(items=items, total=total, page=page, per_page=per_page)
 
 
 @router.post("", response_model=TransactionResponse, status_code=201)

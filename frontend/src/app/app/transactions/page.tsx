@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, Trash2, Upload, Download, Database, ArrowUpDown, Search } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Database, ArrowUpDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API, fmt } from "@/lib/format";
 import { useBusiness } from "@/hooks/useBusiness";
@@ -17,17 +17,28 @@ interface Transaction {
   is_inflow: boolean | null;
 }
 
+interface PaginatedResponse {
+  items: Transaction[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
 const CATEGORIES = [
   "Income", "Sales", "Consulting", "Freelance", "Retainer",
   "Expense", "Office supplies", "Software", "Utilities",
   "Contractor", "Marketing", "Rent", "Insurance", "Travel", "Other",
 ];
 
+const PER_PAGE = 25;
+
 export default function TransactionsPage() {
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
   const { business } = useBusiness();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [fetching, setFetching] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ amount: "", date: "", description: "", category: "" });
@@ -39,21 +50,24 @@ export default function TransactionsPage() {
   const [search, setSearch] = useState("");
 
   const currency = business?.currency || "USD";
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   useEffect(() => {
     if (!authLoading && !token) router.push("/auth/login");
   }, [token, authLoading, router]);
 
-  const fetchTx = useCallback(async () => {
+  const fetchTx = useCallback(async (p: number) => {
     if (!token) return;
     setFetching(true);
     try {
-      const res = await fetch(`${API}/api/transactions`, {
+      const res = await fetch(`${API}/api/transactions?page=${p}&per_page=${PER_PAGE}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load");
-      const data = await res.json();
-      setTransactions(data);
+      const data: PaginatedResponse = await res.json();
+      setTransactions(data.items);
+      setTotal(data.total);
+      setPage(data.page);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load transactions");
     } finally {
@@ -61,7 +75,7 @@ export default function TransactionsPage() {
     }
   }, [token]);
 
-  useEffect(() => { if (token) fetchTx(); }, [token, fetchTx]);
+  useEffect(() => { if (token) fetchTx(1); }, [token, fetchTx]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return transactions;
@@ -99,7 +113,7 @@ export default function TransactionsPage() {
       setForm({ amount: "", date: "", description: "", category: "" });
       setShowForm(false);
       setSuccess("Transaction added");
-      fetchTx();
+      fetchTx(page);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
@@ -114,7 +128,8 @@ export default function TransactionsPage() {
       });
       if (!res.ok) throw new Error("Delete failed");
       setSuccess("Transaction deleted");
-      fetchTx();
+      const goTo = sorted.length <= 1 && page > 1 ? page - 1 : page;
+      fetchTx(goTo);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
@@ -137,7 +152,7 @@ export default function TransactionsPage() {
       setBulkJson("");
       setShowBulkImport(false);
       setSuccess(`Imported ${data.imported} transactions`);
-      fetchTx();
+      fetchTx(1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
@@ -150,7 +165,7 @@ export default function TransactionsPage() {
     reader.onload = async (ev) => {
       const text = ev.target?.result as string;
       const lines = text.split("\n").filter(Boolean);
-      const transactions: { amount: number; date: string; description: string; category?: string }[] = [];
+      const txs: { amount: number; date: string; description: string; category?: string }[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(",");
         if (cols.length < 3) continue;
@@ -159,19 +174,19 @@ export default function TransactionsPage() {
         const description = cols[2].trim();
         const category = cols[3]?.trim();
         if (isNaN(amount) || !date) continue;
-        transactions.push({ amount, date, description, category });
+        txs.push({ amount, date, description, category });
       }
-      if (transactions.length === 0) { setError("No valid rows found in CSV"); return; }
+      if (txs.length === 0) { setError("No valid rows found in CSV"); return; }
       try {
         const res = await fetch(`${API}/api/transactions/bulk`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ transactions }),
+          body: JSON.stringify({ transactions: txs }),
         });
         if (!res.ok) throw new Error("Import failed");
         const data = await res.json();
         setSuccess(`Imported ${data.imported} transactions from CSV`);
-        fetchTx();
+        fetchTx(1);
       } catch (err) {
         setError(err instanceof Error ? err.message : "CSV import failed");
       }
@@ -221,14 +236,14 @@ export default function TransactionsPage() {
           <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{success}</div>
         )}
 
-        {transactions.length > 0 && (
+        {total > 0 && (
           <div className="mb-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by description, category, date, or amount..."
+              placeholder="Search transactions on this page..."
               className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 hover:border-slate-300 focus:border-slate-400 focus:outline-none transition-colors"
             />
           </div>
@@ -337,26 +352,26 @@ export default function TransactionsPage() {
           <div className="flex items-center justify-center py-16">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
           </div>
-        ) : sorted.length === 0 ? (
+        ) : total === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center">
             <Database className="h-10 w-10 text-slate-300 mb-4" />
-            <p className="text-sm font-medium text-slate-700">
-              {search ? "No matching transactions" : "No transactions yet"}
-            </p>
+            <p className="text-sm font-medium text-slate-700">No transactions yet</p>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              {search
-                ? "Try a different search term."
-                : "Add transactions manually or import from CSV to get started."}
+              Add transactions manually or import from CSV to get started.
             </p>
-            {!search && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              >
-                <Plus className="h-4 w-4 inline mr-1" />
-                Add your first transaction
-              </button>
-            )}
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              <Plus className="h-4 w-4 inline mr-1" />
+              Add your first transaction
+            </button>
+          </div>
+        ) : sorted.length === 0 && search ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center">
+            <Search className="h-10 w-10 text-slate-300 mb-4" />
+            <p className="text-sm font-medium text-slate-700">No matching transactions</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs">Try a different search term or browse other pages.</p>
           </div>
         ) : (
           <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
@@ -408,11 +423,50 @@ export default function TransactionsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400 flex justify-between">
-              <span>{filtered.length} of {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}</span>
-              {search && filtered.length > 0 && (
-                <span className="text-slate-400">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</span>
-              )}
+            <div className="border-t border-slate-100 px-4 py-2.5 flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                {filtered.length !== transactions.length
+                  ? `${sorted.length} of ${transactions.length} on page ${page}`
+                  : `${total} total transaction${total !== 1 ? "s" : ""}`}
+                {sorted.length > 0 && search && ` (${sorted.length} filtered)`}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => fetchTx(page - 1)}
+                  disabled={page <= 1}
+                  className="rounded p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  if (totalPages > 7 && p !== 1 && p !== totalPages && Math.abs(p - page) > 2) {
+                    if (Math.abs(p - page) === 3) return <span key={p} className="px-1 text-xs text-slate-300">...</span>;
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => fetchTx(p)}
+                      className={`min-w-[28px] rounded px-2 py-1 text-xs font-medium transition-colors ${
+                        p === page
+                          ? "bg-slate-900 text-white"
+                          : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => fetchTx(page + 1)}
+                  disabled={page >= totalPages}
+                  className="rounded p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}

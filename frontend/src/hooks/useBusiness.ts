@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
 import { API } from "@/lib/format";
 
@@ -16,9 +16,9 @@ export function useBusiness() {
   const [business, setBusiness] = useState<BusinessData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!token) { setLoading(false); return; }
+  const refetch = useCallback(() => {
+    if (authLoading || !token) return;
+    setLoading(true);
     fetch(`${API}/api/business/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -28,5 +28,9 @@ export function useBusiness() {
       .finally(() => setLoading(false));
   }, [token, authLoading]);
 
-  return { business, loading: authLoading || loading };
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { business, loading: authLoading || loading, refetch };
 }
