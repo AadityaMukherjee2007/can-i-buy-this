@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.transaction import Transaction
 from app.schemas.business import BusinessResponse, BusinessUpdate
 from app.api.deps import get_current_user
+from app.services.currency_service import get_exchange_rate
 
 router = APIRouter(prefix="/api/business", tags=["business"])
 
@@ -34,11 +35,22 @@ async def update_my_business(
     db: AsyncSession = Depends(get_session),
 ):
     biz = user.business
+    old_currency = biz.currency
+
     if payload.company_name is not None:
         biz.company_name = payload.company_name
     if payload.min_safe_reserve is not None:
         biz.min_safe_reserve = payload.min_safe_reserve
-    if payload.currency is not None:
+    if payload.currency is not None and payload.currency != old_currency:
+        rate = await get_exchange_rate(old_currency, payload.currency)
+        if rate is not None:
+            result = await db.execute(
+                select(Transaction).where(Transaction.business_id == biz.id)
+            )
+            transactions = result.scalars().all()
+            for txn in transactions:
+                txn.amount = round(txn.amount * rate, 2)
+            biz.min_safe_reserve = round(biz.min_safe_reserve * rate, 2)
         biz.currency = payload.currency
     await db.commit()
     await db.refresh(biz)
