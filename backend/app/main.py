@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI):
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                await conn.execute(sa.text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'USD'"))
         except Exception:
             pass
     yield
