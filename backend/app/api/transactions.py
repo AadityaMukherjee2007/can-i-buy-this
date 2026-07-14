@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -10,7 +10,6 @@ from app.models.user import User
 from app.models.transaction import Transaction
 from app.api.deps import get_current_user
 from app.schemas.transaction import TransactionResponse, TransactionCreate, BulkTransactionCreate, PaginatedTransactions
-from sqlalchemy import func
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 
@@ -19,10 +18,36 @@ router = APIRouter(prefix="/api/transactions", tags=["transactions"])
 async def list_transactions(
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
+    search: str | None = Query(None),
+    type: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    category: str | None = Query(None),
+    status: str | None = Query(None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
     base = select(Transaction).where(Transaction.business_id == user.business.id)
+
+    if search:
+        base = base.where(
+            or_(
+                Transaction.description.ilike(f"%{search}%"),
+                Transaction.category.ilike(f"%{search}%"),
+                Transaction.notes.ilike(f"%{search}%"),
+            )
+        )
+    if type:
+        base = base.where(Transaction.type == type)
+    if date_from:
+        base = base.where(Transaction.date >= date_from)
+    if date_to:
+        base = base.where(Transaction.date <= date_to)
+    if category:
+        base = base.where(Transaction.category == category)
+    if status:
+        base = base.where(Transaction.status == status)
+
     total_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = total_result.scalar() or 0
     result = await db.execute(
@@ -40,7 +65,8 @@ async def create_transaction(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
 ):
-    is_inflow = payload.is_inflow if payload.is_inflow is not None else payload.amount > 0
+    txn_type = payload.type or ("income" if payload.amount > 0 else "expense")
+    is_inflow = payload.is_inflow if payload.is_inflow is not None else txn_type == "income"
     tx = Transaction(
         business_id=user.business.id,
         amount=payload.amount,
@@ -48,6 +74,11 @@ async def create_transaction(
         description=payload.description,
         category=payload.category,
         is_inflow=is_inflow,
+        type=txn_type,
+        notes=payload.notes,
+        payment_method=payload.payment_method,
+        status=payload.status,
+        tags=payload.tags,
     )
     db.add(tx)
     await db.commit()
@@ -63,7 +94,8 @@ async def bulk_create_transactions(
 ):
     transactions = []
     for t in payload.transactions:
-        is_inflow = t.is_inflow if t.is_inflow is not None else t.amount > 0
+        txn_type = t.type or ("income" if t.amount > 0 else "expense")
+        is_inflow = t.is_inflow if t.is_inflow is not None else txn_type == "income"
         transactions.append(Transaction(
             business_id=user.business.id,
             amount=t.amount,
@@ -71,6 +103,11 @@ async def bulk_create_transactions(
             description=t.description,
             category=t.category,
             is_inflow=is_inflow,
+            type=txn_type,
+            notes=t.notes,
+            payment_method=t.payment_method,
+            status=t.status,
+            tags=t.tags,
         ))
     db.add_all(transactions)
     await db.commit()

@@ -7,13 +7,7 @@ import { Loader2, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API } from "@/lib/format";
 import { useBusiness } from "@/hooks/useBusiness";
-
-const CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY", "CAD", "AUD", "BRL", "SGD", "AED"];
-
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$", EUR: "€", GBP: "£", INR: "₹", JPY: "¥",
-  CAD: "CA$", AUD: "A$", BRL: "R$", SGD: "S$", AED: "د.إ",
-};
+import { CURRENCY_OPTIONS, getCurrencySymbol } from "@/lib/currencies";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -123,7 +117,7 @@ export default function SettingsPage() {
                 Minimum safe reserve
               </label>
               <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">{CURRENCY_SYMBOLS[currency] || currency}</span>
+                <span className="absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">{getCurrencySymbol(currency)}</span>
                 <input
                   id="safeReserve"
                   type="number"
@@ -148,7 +142,7 @@ export default function SettingsPage() {
                 onChange={(e) => setCurrency(e.target.value)}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 hover:border-slate-300 focus:border-slate-400 focus:outline-none transition-colors"
               >
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {CURRENCY_OPTIONS.map((o) => <option key={o.code} value={o.code}>{o.name} ({o.code})</option>)}
               </select>
               {currencyWarning && (
                 <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

@@ -29,7 +29,7 @@ async def _seed_transactions(db: AsyncSession, business_id: str) -> list[Transac
             business_id=business_id,
             amount=amt, date=dt,
             description=f"Invoice payment — {random.choice(['Client A', 'Client B', 'Consulting', 'Freelance', 'Retainer'])}",
-            category="income", is_inflow=True,
+            category="income", is_inflow=True, type="income",
         ))
     for i in range(50):
         dt = today - timedelta(days=i + 1)
@@ -41,7 +41,7 @@ async def _seed_transactions(db: AsyncSession, business_id: str) -> list[Transac
                 "Office supplies", "Software subscription", "Utilities",
                 "Contractor payment", "Marketing", "Rent", "Insurance", "Travel"
             ]),
-            category="expense", is_inflow=False,
+            category="expense", is_inflow=False, type="expense",
         ))
     db.add_all(seeded)
     await db.commit()

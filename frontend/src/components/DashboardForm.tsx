@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { getCurrencySymbol } from "@/lib/currencies";
 
 interface FormData {
   purchase_name: string;
@@ -23,11 +24,6 @@ interface Props {
   currency?: string;
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$", EUR: "€", GBP: "£", INR: "₹", JPY: "¥",
-  CAD: "CA$", AUD: "A$", BRL: "R$", SGD: "S$", AED: "د.إ",
-};
-
 function parseNum(v: string): number {
   const n = parseFloat(v);
   return isNaN(n) ? NaN : n;
@@ -39,7 +35,7 @@ function parseIntNum(v: string): number {
 }
 
 export default function DashboardForm({ onSubmit, loading, currency }: Props) {
-  const symbol = currency ? (CURRENCY_SYMBOLS[currency] ?? currency) : "$";
+  const symbol = currency ? getCurrencySymbol(currency) : "$";
   const [form, setForm] = useState<FormData>({
     purchase_name: "",
     purchase_cost: "",

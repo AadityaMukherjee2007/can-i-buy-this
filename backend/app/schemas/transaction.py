@@ -11,6 +11,11 @@ class TransactionResponse(BaseModel):
     description: str | None
     category: str | None
     is_inflow: bool | None
+    type: str | None = None
+    notes: str | None = None
+    payment_method: str | None = None
+    status: str = "cleared"
+    tags: list[str] | None = None
 
     class Config:
         from_attributes = True
@@ -22,6 +27,11 @@ class TransactionCreate(BaseModel):
     description: str = Field("", max_length=500)
     category: str | None = None
     is_inflow: bool | None = None
+    type: str | None = None
+    notes: str | None = None
+    payment_method: str | None = None
+    status: str = "cleared"
+    tags: list[str] | None = None
 
 
 class BulkTransactionCreate(BaseModel):
