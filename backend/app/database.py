@@ -9,7 +9,7 @@ from app.config import settings
 _is_serverless = os.environ.get("NETLIFY") == "true" or os.environ.get("VERCEL") == "1"
 
 engine = create_async_engine(
-    settings.database_url,
+    settings.database_url.replace("sslmode=require", "ssl=require"),
     echo=False,
     poolclass=NullPool if _is_serverless else None,
 )
