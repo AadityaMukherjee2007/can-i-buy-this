@@ -8,17 +8,10 @@ from app.config import settings
 
 _is_serverless = os.environ.get("NETLIFY") == "true" or os.environ.get("VERCEL") == "1"
 
-_url = (
-    settings.database_url
-    .replace("?sslmode=require", "?ssl=require").replace("&sslmode=require", "&ssl=require")
-    .replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
-)
-
 engine = create_async_engine(
-    _url,
+    settings.database_url,
     echo=False,
     poolclass=NullPool if _is_serverless else None,
-    connect_args={"statement_cache_size": 0},
 )
 
 async_session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
