@@ -381,6 +381,20 @@ export default function TransactionsPage() {
               Add your first transaction
             </button>
           </div>
+        ) : total === 0 && error ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center">
+            <Database className="h-10 w-10 text-slate-300 mb-4" />
+            <p className="text-sm font-medium text-slate-700">Unable to load transactions</p>
+            <p className="text-xs text-slate-400 mt-1 max-w-xs">
+              {error}. Make sure the backend is running and refresh the page.
+            </p>
+            <button
+              onClick={() => fetchTx(1)}
+              className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Retry
+            </button>
+          </div>
         ) : sorted.length === 0 && search ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center">
             <Search className="h-10 w-10 text-slate-300 mb-4" />
