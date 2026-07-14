@@ -37,7 +37,7 @@ test.describe("Transactions page", () => {
     await page.waitForURL("/app/transactions", { timeout: 10000 });
 
     await page.click("text=Add");
-    await expect(page.getByText("Amount ($)")).toBeVisible();
+    await expect(page.getByText("Amount (USD)")).toBeVisible();
 
     await page.fill("input[type=number]", "5000");
     await page.fill('input[type="date"]', "2026-07-10");

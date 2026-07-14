@@ -20,16 +20,16 @@ async function register(page: Page, email?: string) {
 test.describe("Landing page", () => {
   test("loads with hero and example cards", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("One purchase.")).toBeVisible();
+    await expect(page.getByText("One bad purchase can undo months of growth.")).toBeVisible();
     await expect(page.getByText("One clear decision.")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Start evaluating" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /Start evaluating|Go to dashboard/ }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
-    await expect(page.getByText("How it works")).toBeVisible();
+    await expect(page.getByText("Enter a purchase")).toBeVisible();
   });
 
   test("example carousel shows MacBook example", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("MacBook Pro 16-inch")).toBeVisible();
+    await expect(page.getByText("MacBook Pro 16-inch").first()).toBeVisible();
     await expect(page.getByText("YES", { exact: true })).toBeVisible();
   });
 });
@@ -78,8 +78,8 @@ test.describe("Dashboard evaluation", () => {
     await page.fill("#purchase_cost", "500");
     await page.click("text=Evaluate purchase");
 
-    await expect(page.getByText("Purchase cost")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("Day 90 balance")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Purchase cost", { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Day 90 balance", { exact: true })).toBeVisible({ timeout: 5000 });
   });
 
   test("shows validation errors for empty form", async ({ page }) => {
@@ -100,7 +100,7 @@ test.describe("Dashboard evaluation", () => {
     await page.fill("#purchase_name", "Desk");
     await page.fill("#purchase_cost", "300");
     await page.click("text=Evaluate purchase");
-    await expect(page.getByText("Purchase cost")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Purchase cost", { exact: true })).toBeVisible({ timeout: 15000 });
 
     await page.click('[aria-label="New evaluation"]');
     await expect(page.getByText("What to buy")).toBeVisible();

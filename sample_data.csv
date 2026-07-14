@@ -1,0 +1,56 @@
+amount,date,description,category
+5000,2026-01-05,Client payment - ABC Corp,income
+-1200,2026-01-07,Office rent,rent
+-350,2026-01-10,Software subscriptions,software
+-85,2026-01-12,Internet bill,utilities
+2500,2026-01-15,Consulting project,income
+-200,2026-01-18,Office supplies,supplies
+7500,2026-01-20,Website redesign project,income
+-1500,2026-01-22,Contractor payment,contractors
+-45,2026-01-25,Cloud hosting,software
+3500,2026-01-28,Design retainer,income
+-600,2026-01-30,Marketing ads,marketing
+-75,2026-02-02,Phone bill,utilities
+6000,2026-02-05,Monthly retainer - XYZ,income
+-1300,2026-02-07,Office rent,rent
+-400,2026-02-10,SaaS tools,software
+3000,2026-02-12,Strategy session,income
+-250,2026-02-15,New equipment,equipment
+-95,2026-02-18,Team lunch,business_meals
+4500,2026-02-20,Implementation project,income
+-1600,2026-02-22,Developer contractor,contractors
+-120,2026-02-25,Domain renewals,software
+4000,2026-02-28,Sprint retainer,income
+-55,2026-03-02,Water bill,utilities
+5500,2026-03-05,Platform development,income
+-1300,2026-03-07,Office rent,rent
+-500,2026-03-10,Analytics tools,software
+2000,2026-03-12,Workshop facilitation,income
+-300,2026-03-15,Client meeting travel,travel
+8000,2026-03-18,Enterprise deployment,income
+-1700,2026-03-20,Contractor team,contractors
+-150,2026-03-22,Printer & supplies,supplies
+-65,2026-03-25,CRM subscription,software
+4800,2026-03-28,Support retainer,income
+-50,2026-04-01,Electricity bill,utilities
+6200,2026-04-05,Feature development,income
+-1300,2026-04-07,Office rent,rent
+-450,2026-04-10,DevOps tools,software
+2800,2026-04-12,Audit services,income
+-350,2026-04-15,Conference tickets,travel
+7200,2026-04-18,Integration platform,income
+-1800,2026-04-20,Contractor project,contractors
+-90,2026-04-22,Accounting software,software
+4200,2026-04-25,Consulting day rate,income
+-60,2026-04-28,Office cleaning,utilities
+5800,2026-05-02,MVP development,income
+-1300,2026-05-05,Office rent,rent
+-550,2026-05-08,Security tools,software
+3200,2026-05-10,Training workshop,income
+-400,2026-05-12,New monitors,equipment
+6500,2026-05-15,Product launch prep,income
+-1900,2026-05-18,Agency contractor,contractors
+-110,2026-05-20,API subscriptions,software
+3800,2026-05-22,Migration service,income
+-70,2026-05-25,Insurance,utilities
+5100,2026-05-28,Monthly hosting retainer,income
