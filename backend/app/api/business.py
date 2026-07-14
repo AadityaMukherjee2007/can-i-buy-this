@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -19,12 +19,12 @@ async def get_my_business(
 ):
     biz = user.business
     result = await db.execute(
-        select(Transaction).where(Transaction.business_id == biz.id)
+        select(func.coalesce(func.sum(Transaction.amount), 0))
+        .where(Transaction.business_id == biz.id)
     )
-    transactions = result.scalars().all()
-    cash = sum(t.amount for t in transactions)
+    cash = result.scalar()
     resp = BusinessResponse.model_validate(biz)
-    resp.current_cash = round(cash, 2)
+    resp.current_cash = round(float(cash), 2)
     return resp
 
 

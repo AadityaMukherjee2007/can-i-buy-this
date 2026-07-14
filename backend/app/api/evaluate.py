@@ -15,7 +15,7 @@ from app.services.decision_engine import evaluate_purchase
 router = APIRouter(prefix="/api/evaluate", tags=["evaluate"])
 
 
-async def _seed_transactions(db: AsyncSession, business_id: str) -> None:
+async def _seed_transactions(db: AsyncSession, business_id: str) -> list[Transaction]:
     from datetime import datetime, timedelta
     import random
     random.seed(42)
@@ -45,6 +45,7 @@ async def _seed_transactions(db: AsyncSession, business_id: str) -> None:
         ))
     db.add_all(seeded)
     await db.commit()
+    return seeded
 
 
 @router.post("", response_model=EvaluateResponse)
@@ -66,38 +67,20 @@ async def evaluate(
     transactions = result.scalars().all()
 
     if not transactions:
-        await _seed_transactions(db, biz.id)
+        transactions = await _seed_transactions(db, biz.id)
         data_source = "seeded"
-        current_cash = 0.0
-        historical_inflows = []
-        historical_outflows = []
-        result = await db.execute(
-            select(Transaction).where(Transaction.business_id == biz.id)
-            .order_by(Transaction.date.desc())
-            .limit(500)
-        )
-        transactions = result.scalars().all()
-        for txn in transactions:
-            if txn.amount >= 0:
-                historical_inflows.append(txn.amount)
-            else:
-                historical_outflows.append(abs(txn.amount))
-            if txn.amount > 0:
-                current_cash += txn.amount
-            else:
-                current_cash -= abs(txn.amount)
     else:
         data_source = "real"
-        for txn in transactions:
-            if txn.amount >= 0:
-                historical_inflows.append(txn.amount)
-            else:
-                historical_outflows.append(abs(txn.amount))
 
-            if txn.amount > 0:
-                current_cash += txn.amount
-            else:
-                current_cash -= abs(txn.amount)
+    for txn in transactions:
+        if txn.amount >= 0:
+            historical_inflows.append(txn.amount)
+        else:
+            historical_outflows.append(abs(txn.amount))
+        if txn.amount > 0:
+            current_cash += txn.amount
+        else:
+            current_cash -= abs(txn.amount)
 
     decision = evaluate_purchase(
         current_cash=float(current_cash),

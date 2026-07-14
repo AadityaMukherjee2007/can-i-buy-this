@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
@@ -18,50 +18,26 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 export default function SettingsPage() {
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
-  const { business, refetch } = useBusiness();
+  const { business, loading: bizLoading, refetch } = useBusiness();
   const [companyName, setCompanyName] = useState("");
   const [safeReserve, setSafeReserve] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [initialCurrency, setInitialCurrency] = useState("USD");
-  const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const currencyWarning = currency !== initialCurrency && initialCurrency !== "";
-  const fetchedOnce = useRef(false);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || bizLoading) return;
     if (!token) { router.push("/auth/login"); return; }
-
-    if (business && !fetchedOnce.current) {
-      fetchedOnce.current = true;
+    if (business) {
       setCompanyName(business.company_name || "");
       setSafeReserve(business.min_safe_reserve?.toString() || "");
       setCurrency(business.currency || "USD");
       setInitialCurrency(business.currency || "USD");
-      setFetching(false);
-    } else if (!business && !fetchedOnce.current) {
-      fetch(`${API}/api/business/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to load business data");
-          return res.json();
-        })
-        .then((data: { company_name: string; min_safe_reserve: number; currency: string }) => {
-          fetchedOnce.current = true;
-          setCompanyName(data.company_name || "");
-          setSafeReserve(data.min_safe_reserve?.toString() || "");
-          setCurrency(data.currency || "USD");
-          setInitialCurrency(data.currency || "USD");
-        })
-        .catch((err) => setError(err.message))
-        .finally(() => setFetching(false));
-    } else {
-      setFetching(false);
     }
-  }, [token, authLoading, router, business]);
+  }, [token, authLoading, router, business, bizLoading]);
 
   useEffect(() => {
     if (success) {
@@ -70,7 +46,7 @@ export default function SettingsPage() {
     }
   }, [success]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -105,9 +81,9 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [token, companyName, safeReserve, currency, initialCurrency, refetch]);
 
-  if (authLoading || fetching) {
+  if (authLoading || bizLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
@@ -190,7 +166,7 @@ export default function SettingsPage() {
             )}
 
             {success && (
-              <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700" role="alert">
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700" role="status">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 {success}
               </div>

@@ -59,11 +59,15 @@ export default function TransactionsPage() {
   const fetchTx = useCallback(async (p: number) => {
     if (!token) return;
     setFetching(true);
+    setError(null);
     try {
       const res = await fetch(`${API}/api/transactions?page=${p}&per_page=${PER_PAGE}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.detail || "Failed to load");
+      }
       const data: PaginatedResponse = await res.json();
       setTransactions(data.items);
       setTotal(data.total);
@@ -88,11 +92,14 @@ export default function TransactionsPage() {
     );
   }, [transactions, search]);
 
-  const sorted = [...filtered].sort((a, b) =>
-    sortAsc ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
+  const sorted = useMemo(() =>
+    [...filtered].sort((a, b) =>
+      sortAsc ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
+    ),
+    [filtered, sortAsc]
   );
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleAdd = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     const amount = parseFloat(form.amount);
@@ -117,9 +124,9 @@ export default function TransactionsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
-  };
+  }, [token, form, page, fetchTx]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm("Delete this transaction?")) return;
     try {
       const res = await fetch(`${API}/api/transactions/${id}`, {
@@ -128,14 +135,14 @@ export default function TransactionsPage() {
       });
       if (!res.ok) throw new Error("Delete failed");
       setSuccess("Transaction deleted");
-      const goTo = sorted.length <= 1 && page > 1 ? page - 1 : page;
-      fetchTx(goTo);
+      const nextPage = transactions.length <= 1 && page > 1 ? page - 1 : page;
+      fetchTx(nextPage);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
-  };
+  }, [token, transactions.length, page, fetchTx]);
 
-  const handleBulkImport = async (e: React.FormEvent) => {
+  const handleBulkImport = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     let parsed: unknown;
@@ -156,9 +163,9 @@ export default function TransactionsPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     }
-  };
+  }, [token, bulkJson, fetchTx]);
 
-  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCsvUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -193,7 +200,14 @@ export default function TransactionsPage() {
     };
     reader.readAsText(file);
     e.target.value = "";
-  };
+  }, [token, fetchTx]);
+
+  const goToPage = useCallback((p: number) => { fetchTx(p); }, [fetchTx]);
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.getAttribute("data-id");
+    if (id) handleDelete(id);
+  }, [handleDelete]);
 
   if (authLoading) {
     return (
@@ -230,10 +244,10 @@ export default function TransactionsPage() {
         </div>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700" role="alert">{error}</div>
         )}
         {success && (
-          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{success}</div>
+          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700" role="status">{success}</div>
         )}
 
         {total > 0 && (
@@ -352,7 +366,7 @@ export default function TransactionsPage() {
           <div className="flex items-center justify-center py-16">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
           </div>
-        ) : total === 0 ? (
+        ) : total === 0 && !error ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-white p-12 text-center">
             <Database className="h-10 w-10 text-slate-300 mb-4" />
             <p className="text-sm font-medium text-slate-700">No transactions yet</p>
@@ -411,7 +425,8 @@ export default function TransactionsPage() {
                       </td>
                       <td className="px-2 py-2.5">
                         <button
-                          onClick={() => handleDelete(tx.id)}
+                          data-id={tx.id}
+                          onClick={handleDeleteClick}
                           className="rounded p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                           aria-label="Delete transaction"
                         >
@@ -432,7 +447,7 @@ export default function TransactionsPage() {
               </span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => fetchTx(page - 1)}
+                  onClick={() => goToPage(page - 1)}
                   disabled={page <= 1}
                   className="rounded p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   aria-label="Previous page"
@@ -447,7 +462,7 @@ export default function TransactionsPage() {
                   return (
                     <button
                       key={p}
-                      onClick={() => fetchTx(p)}
+                      onClick={() => goToPage(p)}
                       className={`min-w-[28px] rounded px-2 py-1 text-xs font-medium transition-colors ${
                         p === page
                           ? "bg-slate-900 text-white"
@@ -459,7 +474,7 @@ export default function TransactionsPage() {
                   );
                 })}
                 <button
-                  onClick={() => fetchTx(page + 1)}
+                  onClick={() => goToPage(page + 1)}
                   disabled={page >= totalPages}
                   className="rounded p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   aria-label="Next page"

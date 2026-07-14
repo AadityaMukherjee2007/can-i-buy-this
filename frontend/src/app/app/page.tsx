@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Shield, Database, BarChart3 } from "lucide-react";
@@ -25,7 +25,6 @@ interface Result {
   purchase_cost: number;
 }
 
-
 export default function Dashboard() {
   const router = useRouter();
   const { token, user, loading: authLoading } = useAuth();
@@ -38,7 +37,7 @@ export default function Dashboard() {
     if (!authLoading && !token) router.push("/auth/login");
   }, [token, authLoading, router]);
 
-  const handleSubmit = async (data: {
+  const handleSubmit = useCallback(async (data: {
     purchase_name: string;
     purchase_cost: number;
     recurring_cost: number;
@@ -64,9 +63,9 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const handleReset = () => { setResult(null); setError(null); };
+  const handleReset = useCallback(() => { setResult(null); setError(null); }, []);
 
   if (authLoading || bizLoading) {
     return (

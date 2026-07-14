@@ -19,5 +19,5 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    business = relationship("Business", back_populates="user", uselist=False, lazy="selectin", cascade="all, delete-orphan")
+    business = relationship("Business", back_populates="user", uselist=False, lazy="select", cascade="all, delete-orphan")
     scenarios = relationship("Scenario", back_populates="user", cascade="all, delete-orphan")

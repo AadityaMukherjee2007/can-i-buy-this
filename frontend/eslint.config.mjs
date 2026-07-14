@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   {
-    files: ["src/lib/auth.tsx", "src/hooks/useBusiness.ts", "src/app/app/transactions/page.tsx"],
+    files: ["src/lib/auth.tsx", "src/hooks/useBusiness.ts", "src/app/app/transactions/page.tsx", "src/app/settings/page.tsx"],
     rules: {
       "react-hooks/set-state-in-effect": "off",
     },

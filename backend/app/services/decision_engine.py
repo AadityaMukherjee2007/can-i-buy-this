@@ -26,14 +26,11 @@ def _calc_daily_rate(amounts: List[float], limits=(0.10, 0.10)) -> float:
 
 def _build_trajectory(
     current_cash: float,
-    historical_inflows: List[float],
-    historical_outflows: List[float],
+    target_in: float,
+    target_out: float,
     projection_days: int = 90,
 ) -> np.ndarray:
     rng = np.random.default_rng(42)
-    target_in = _calc_daily_rate(historical_inflows) if historical_inflows else 500.0
-    target_out = _calc_daily_rate(historical_outflows) if historical_outflows else 400.0
-
     weekday_boost = np.tile([1.0, 1.0, 1.0, 1.0, 1.15, 0.6, 0.4], 13)[:projection_days]
     raw_in = rng.normal(target_in, target_in * 0.24, projection_days) * weekday_boost
     raw_out = rng.normal(target_out, target_out * 0.25, projection_days) * weekday_boost
@@ -50,14 +47,13 @@ def _build_trajectory(
 
 def _ramp_up_revenue(expected_revenue: float, start_day: int, projection_days: int) -> np.ndarray:
     impact = np.zeros(projection_days, dtype=np.float64)
-    if expected_revenue <= 0:
+    if expected_revenue <= 0 or start_day >= projection_days:
         return impact
     ramp_duration = 60
-    for day in range(start_day, projection_days):
-        days_since_start = day - start_day
-        ramp_factor = min(days_since_start / ramp_duration, 1.0)
-        monthly_cycles = days_since_start / 30.0
-        impact[day] = expected_revenue * monthly_cycles * ramp_factor
+    days_from_start = np.arange(projection_days - start_day, dtype=np.float64)
+    ramp_factor = np.clip(days_from_start / ramp_duration, 0.0, 1.0)
+    monthly_cycles = days_from_start / 30.0
+    impact[start_day:] = expected_revenue * monthly_cycles * ramp_factor
     return impact
 
 
@@ -73,15 +69,17 @@ def evaluate_purchase(
     projection_days: int = 90,
 ) -> Dict[str, Any]:
     today = datetime.utcnow().date()
-    base_trajectory = _build_trajectory(current_cash, historical_inflows, historical_outflows, projection_days)
-    base_net_daily = _calc_daily_rate(historical_inflows) - _calc_daily_rate(historical_outflows)
+    target_in = _calc_daily_rate(historical_inflows) if historical_inflows else 500.0
+    target_out = _calc_daily_rate(historical_outflows) if historical_outflows else 400.0
+    base_net_daily = target_in - target_out
+
+    base_trajectory = _build_trajectory(current_cash, target_in, target_out, projection_days)
     days = np.arange(1, projection_days + 1, dtype=np.float64)
 
     without_trajectory = base_trajectory.copy()
     cost_day = min(payment_delay_days, projection_days)
 
     revenue_impact = _ramp_up_revenue(expected_revenue, cost_day, projection_days)
-
     with_trajectory = base_trajectory + revenue_impact
 
     if payment_delay_days == 0:
@@ -142,7 +140,6 @@ def evaluate_purchase(
 
         shifted = base_trajectory.copy()
         shifted[wait_d:] -= purchase_cost
-        shifted[:wait_d] = base_trajectory[:wait_d]
 
         post_len = projection_days - wait_d
         if post_len > 0:
