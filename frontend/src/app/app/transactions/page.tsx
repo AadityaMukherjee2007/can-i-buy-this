@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus, Trash2, Upload, Download, Database, ArrowUpDown, Search, ChevronLeft, ChevronRight, X, Filter } from "lucide-react";
+import { Plus, Trash2, Upload, Download, Database, ArrowUpDown, Search, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { API, fmt } from "@/lib/format";
 import { useBusiness } from "@/hooks/useBusiness";
@@ -57,51 +57,72 @@ export default function TransactionsPage() {
   const [filterType, setFilterType] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+
 
   const currency = business?.currency || "USD";
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchId = useRef(0);
+  const searchRef = useRef(search);
+  const filterTypeRef = useRef(filterType);
+  const filterDateFromRef = useRef(filterDateFrom);
+  const filterDateToRef = useRef(filterDateTo);
+  useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
+  useEffect(() => {
+    filterTypeRef.current = filterType;
+  }, [filterType]);
+  useEffect(() => {
+    filterDateFromRef.current = filterDateFrom;
+  }, [filterDateFrom]);
+  useEffect(() => {
+    filterDateToRef.current = filterDateTo;
+  }, [filterDateTo]);
 
   useEffect(() => {
     if (!authLoading && !token) router.push("/auth/login");
   }, [token, authLoading, router]);
 
-  const buildUrl = useCallback((p: number) => {
+  const fetchTx = useCallback(async (p: number) => {
+    if (!token) return;
+    const id = ++fetchId.current;
+    setFetching(true);
+    setError(null);
     const params = new URLSearchParams();
     params.set("page", String(p));
     params.set("per_page", String(PER_PAGE));
-    if (search) params.set("search", search);
-    if (filterType) params.set("type", filterType);
-    if (filterDateFrom) params.set("date_from", filterDateFrom);
-    if (filterDateTo) params.set("date_to", filterDateTo);
-    return `${API}/api/transactions?${params.toString()}`;
-  }, [search, filterType, filterDateFrom, filterDateTo]);
-
-  const fetchTx = useCallback(async (p: number) => {
-    if (!token) return;
-    setFetching(true);
-    setError(null);
+    if (searchRef.current) params.set("search", searchRef.current);
+    if (filterTypeRef.current) params.set("type", filterTypeRef.current);
+    if (filterDateFromRef.current) params.set("date_from", filterDateFromRef.current);
+    if (filterDateToRef.current) params.set("date_to", filterDateToRef.current);
     try {
-      const res = await fetch(buildUrl(p), {
+      const res = await fetch(`${API}/api/transactions?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (id !== fetchId.current) return;
       if (!res.ok) {
         const detail = await res.json().then(b => b.detail).catch(() => null);
         throw new Error(detail || `Request failed (${res.status})`);
       }
       const data: PaginatedResponse = await res.json();
+      if (id !== fetchId.current) return;
       setTransactions(data.items);
       setTotal(data.total);
       setPage(data.page);
     } catch (e) {
+      if (id !== fetchId.current) return;
       setError(e instanceof Error ? e.message : "Failed to load transactions");
     } finally {
-      setFetching(false);
+      if (id === fetchId.current) setFetching(false);
     }
-  }, [token, buildUrl]);
+  }, [token]);
 
   useEffect(() => { if (token) fetchTx(1); }, [token, fetchTx]);
+
+  useEffect(() => {
+    if (token) fetchTx(1);
+  }, [token, search, filterType, filterDateFrom, filterDateTo]);
 
   const debouncedSearch = useCallback((val: string) => {
     setSearchInput(val);
@@ -239,8 +260,7 @@ export default function TransactionsPage() {
     setFilterType("");
     setFilterDateFrom("");
     setFilterDateTo("");
-    fetchTx(1);
-  }, [fetchTx]);
+  }, []);
 
   const hasFilters = search || filterType || filterDateFrom || filterDateTo;
 
@@ -289,59 +309,60 @@ export default function TransactionsPage() {
 
         {total > 0 && (
           <div className="mb-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => debouncedSearch(e.target.value)}
-                  placeholder="Search across all transactions..."
-                  className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 hover:border-slate-300 focus:border-slate-400 focus:outline-none transition-colors"
-                />
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
-                  hasFilters ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-              </button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => debouncedSearch(e.target.value)}
+                placeholder="Search descriptions, categories, notes..."
+                className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 hover:border-slate-300 focus:border-slate-400 focus:outline-none transition-colors"
+              />
             </div>
 
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-lg border border-slate-200 bg-white p-3 space-y-3"
-              >
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Type</label>
-                    <select value={filterType} onChange={(e) => { setFilterType(e.target.value); fetchTx(1); }} className={inputClass}>
-                      <option value="">All</option>
-                      <option value="income">Income</option>
-                      <option value="expense">Expense</option>
-                      <option value="transfer">Transfer</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">From</label>
-                    <input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); fetchTx(1); }} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">To</label>
-                    <input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); fetchTx(1); }} className={inputClass} />
-                  </div>
-                  <div className="flex items-end">
-                    <button onClick={clearFilters} className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-50">
-                      <X className="h-3 w-3" /> Clear
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: "All", value: "" },
+                { label: "Income", value: "income" },
+                { label: "Expense", value: "expense" },
+              ].map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setFilterType(t.value)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    filterType === t.value
+                      ? "bg-slate-900 text-white"
+                      : "bg-white text-slate-500 border border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+
+              <div className="h-4 w-px bg-slate-200 mx-1" />
+
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 focus:border-slate-400 focus:outline-none"
+                aria-label="From date"
+              />
+              <span className="text-xs text-slate-400">—</span>
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 focus:border-slate-400 focus:outline-none"
+                aria-label="To date"
+              />
+
+              {hasFilters && (
+                <button onClick={clearFilters} className="flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-xs text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-colors">
+                  <X className="h-3 w-3" /> Clear
+                </button>
+              )}
+            </div>
           </div>
         )}
 
