@@ -39,7 +39,7 @@ const PER_PAGE = 25;
 
 export default function TransactionsPage() {
   const router = useRouter();
-  const { token, loading: authLoading } = useAuth();
+  const { token, logout, loading: authLoading } = useAuth();
   const { business } = useBusiness();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [total, setTotal] = useState(0);
@@ -101,6 +101,11 @@ export default function TransactionsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (id !== fetchId.current) return;
+      if (res.status === 401) {
+        logout();
+        router.push("/auth/login");
+        return;
+      }
       if (!res.ok) {
         const detail = await res.json().then(b => b.detail).catch(() => null);
         throw new Error(detail || `Request failed (${res.status})`);
@@ -116,7 +121,7 @@ export default function TransactionsPage() {
     } finally {
       if (id === fetchId.current) setFetching(false);
     }
-  }, [token]);
+  }, [token, logout, router]);
 
   useEffect(() => { if (token) fetchTx(1); }, [token, fetchTx]);
 
